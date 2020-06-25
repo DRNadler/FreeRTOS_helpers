@@ -1,5 +1,5 @@
 /**
- * \file heap_useNewlib.c
+ * \file heap_useNewlib_NXP.c
  * \brief Wrappers required to use newlib malloc-family within FreeRTOS.
  *
  * \par Overview
