@@ -1,5 +1,5 @@
 # FreeRTOS Helpers
-We see lots of vendors, application developers, and a few consultants, Pontificating and Spewing about how solid their tools and applications are, citing MISRA-compliance and other bullox. If they would shut up for a moment and glance downwards, they'd notice they are wearing no pants and standing in quicksand, in the middle of a swamp and surrounded by crocodiles...
+We see lots of vendors, application developers, and a few consultants, Pontificating and Spewing about how solid their tools and processes and applications are, citing MISRA-compliance and other bullox. If they would shut up for a moment and glance downwards, they'd notice they are wearing no pants and standing in quicksand, in the middle of a swamp and surrounded by crocodiles...
 
 **If you're using FreeRTOS and GCC, I hope the tools in this repository can help you create a stable platform for your applications using FreeRTOS**, at least a bit... After all, as my wife sometimes reminds it is best to wear pants, and most prudent to avoid standing in quicksand amidst crocodiles.
 
@@ -14,7 +14,7 @@ FreeRTOS provides a truly excellent OS, with pretty much all the features you ne
 * integration with C-RTL (FreeRTOS assumes a working C toolchain)
 * LwIP (recently documented on FreeRTOS site as more performant than FreeRTOS TCP/IP)
 
-As the vendor-provided bits are usually crap, it often takes more time/money to create a working basic platform than the actual target application. Not a great state of affairs. And as the complexity of the MCUs and peripherals (and required drivers) continues to increase, the situation worsens. Way back we used to expect to write all device drivers ourselves, but that is no longer sensible from either cost or time-to-market perspectives,
+As the vendor-provided bits are usually crap, it often takes more time/money to create a working basic platform than the actual target application. Not a great state of affairs. And as the complexity of the MCUs and peripherals (and required drivers) continues to increase, the situation worsens. Way back we used to expect to write all device drivers ourselves, but that is no longer sensible from cost nor time-to-market perspectives.
 
 ## We Support FreeRTOS! Yeah! Woo Hoo!
 Well, so the MCU vendors loudly lie. The reality is horrendous. If you actually need to build an application that is both performant and reliable, the stuff provided by MCU vendors is often completely unworkable. Typical fuckups include:
@@ -40,7 +40,7 @@ The tools below don't address the driver mess, but at least aid in basic use of 
 * Other MCUs and toolchains: start with the NXP version
 
 # FreeRTOS ISR Stack Use Check (for Arm Cortex M4-7)
-On ARM, FreeRTOS ISRs run on the dedicated MSP stack, allocated at top of RAM. This is great, as you don't need to reserve stack space for the deepest nested ISR stack-use for all tasks as on older processors. While FreeRTOS provides great tools for checking actual stack use for tasks, **FreeRTOS does not provide any means for checking actual MSP stack use by your ISRs.** Obviously, serious developers need to verify adequate ISR stack space, especially with any complex and/or nested ISRs. port_DRN.c adds code to check MSP stack use. 
+On ARM, FreeRTOS ISRs run on the dedicated MSP stack, allocated at top of RAM. This is great, as you don't need to reserve stack space for the deepest nested ISR stack-use for every single task as on older processors. While FreeRTOS provides great tools for checking actual stack use for tasks, **FreeRTOS does not provide any means for checking actual MSP stack use by your ISRs.** Obviously, serious developers need to verify adequate ISR stack space, especially with any complex and/or nested ISRs. port_DRN.c adds code to check MSP stack use. 
 
 To use port_DRN.c, exclude FreeRTOS amazon-freertos/freertos_kernel/portable/GCC/ARM_CM4F/port.c from your build and add port_DRN.c. Ensure you've got required space allocation in your LD, then configure your MSP stack size and enable MSP checking by adding to your FreeRTOSconfig.h:
 
