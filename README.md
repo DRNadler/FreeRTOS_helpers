@@ -1,5 +1,6 @@
 # FreeRTOS Helpers
-We see lots of vendors, application developers, and a few consultants, Pontificating and Spewing about how solid their tools and processes and applications are, citing MISRA-compliance and other bullox. If they would shut up for a moment and glance downwards, they'd notice they are wearing no pants and standing in quicksand, in the middle of a swamp and surrounded by crocodiles... ![...](https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Quicksandwarning.JPG/440px-Quicksandwarning.JPG)
+We see lots of vendors, application developers, and a few consultants, Pontificating and Spewing about how solid their tools and processes and applications are, citing MISRA-compliance and other bullox. If they would shut up for a moment and glance downwards, they'd notice they are wearing no pants and standing in quicksand, in the middle of a swamp and surrounded by crocodiles...   
+![...](https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Quicksandwarning.JPG/440px-Quicksandwarning.JPG)
 
 **If you're using FreeRTOS and GCC, I hope the tools in this repository can help you create a stable platform for your applications using FreeRTOS**, at least a bit... After all, as my wife sometimes reminds it is best to wear pants, and most prudent to avoid standing in quicksand amidst crocodiles.
 
