@@ -121,7 +121,7 @@ register char * stack_ptr asm("sp");
     // STM CubeMX-generated LD files provide the following symbols:
     //    end     /* aligned first word beyond BSS */
     //    _estack /* one word beyond end of "RAM" Ram type memory, for STM32F429 0x20030000 */
-    // Kludge below uses
+    // Kludge below uses CubeMX-generated symbols instead of sane LD definitions
     #define __HeapBase  end
     #define __HeapLimit _estack // In K64F LD this is already adjusted for ISR stack space...
     static int heapBytesRemaining;
@@ -135,6 +135,17 @@ register char * stack_ptr asm("sp");
 #endif
 
 
+#ifdef MALLOCS_INSIDE_ISRs // STM code to avoid malloc within ISR (USB CDC stack)
+    // We can't use vTaskSuspendAll() within an ISR.
+    // STM's stunningly bad coding malpractice calls malloc within ISRs (for example, on USB connect function USBD_CDC_Init)
+    // So, we must just suspend/resume interrupts, lengthening max interrupt response time, aarrggg...
+    #define DRN_ENTER_CRITICAL_SECTION(_usis) { _usis = taskENTER_CRITICAL_FROM_ISR(); } // Disables interrupts (after saving prior state)
+    #define DRN_EXIT_CRITICAL_SECTION(_usis)  { taskEXIT_CRITICAL_FROM_ISR(_usis);     } // Re-enables interrupts (unless already disabled prior taskENTER_CRITICAL)
+#else
+    #define DRN_ENTER_CRITICAL_SECTION(_usis) vTaskSuspendAll(); // Note: safe to use before FreeRTOS scheduler started, but not in ISR
+    #define DRN_EXIT_CRITICAL_SECTION(_usis)  xTaskResumeAll();  // Note: safe to use before FreeRTOS scheduler started, but not in ISR
+#endif
+
 #ifndef NDEBUG
     static int totalBytesProvidedBySBRK = 0;
 #endif
@@ -145,6 +156,9 @@ extern char __HeapBase, __HeapLimit;  // symbols from linker LD command file
 
 //! _sbrk_r version supporting reentrant newlib (depends upon above symbols defined by linker control file).
 void * _sbrk_r(struct _reent *pReent, int incr) {
+    #ifdef MALLOCS_INSIDE_ISRs // block interrupts during free-storage use
+      UBaseType_t usis; // saved interrupt status
+    #endif
     static char *currentHeapEnd = &__HeapBase;
     #ifdef STM_VERSION // Use STM CubeMX LD symbols for heap
       if(TotalHeapSize==0) {
@@ -153,22 +167,24 @@ void * _sbrk_r(struct _reent *pReent, int incr) {
     #endif
     char* limit = (xTaskGetSchedulerState()==taskSCHEDULER_NOT_STARTED) ?
             stack_ptr   :  // Before scheduler is started, limit is stack pointer (risky!)
-            &__HeapLimit-ISR_STACK_LENGTH_BYTES;  // Once running, OK to reuse all remaining RAM except ISR (MSP) stack
-    vTaskSuspendAll(); // Note: safe to use before FreeRTOS scheduler started, but not within an ISR
+            &__HeapLimit-ISR_STACK_LENGTH_BYTES;  // Once running, OK to reuse all remaining RAM except ISR stack (MSP) stack
+    DRN_ENTER_CRITICAL_SECTION(usis);
     if (currentHeapEnd + incr > limit) {
         // Ooops, no more memory available...
         #if( configUSE_MALLOC_FAILED_HOOK == 1 )
           {
             extern void vApplicationMallocFailedHook( void );
+            DRN_EXIT_CRITICAL_SECTION(usis);
             vApplicationMallocFailedHook();
           }
         #elif defined(configHARD_STOP_ON_MALLOC_FAILURE)
             // If you want to alert debugger or halt...
+            // WARNING: brkpt instruction may prevent watchdog operation...
             while(1) { __asm("bkpt #0"); }; // Stop in GUI as if at a breakpoint (if debugging, otherwise loop forever)
         #else
             // Default, if you prefer to believe your application will gracefully trap out-of-memory...
             pReent->_errno = ENOMEM; // newlib's thread-specific errno
-            xTaskResumeAll();  // Note: safe to use before FreeRTOS scheduler started, but not within an ISR;
+            DRN_EXIT_CRITICAL_SECTION(usis);
         #endif
         return (char *)-1; // the malloc-family routine that called sbrk will return 0
     }
@@ -179,7 +195,7 @@ void * _sbrk_r(struct _reent *pReent, int incr) {
     #ifndef NDEBUG
         totalBytesProvidedBySBRK += incr;
     #endif
-    xTaskResumeAll();  // Note: safe to use before FreeRTOS scheduler started, but not within an ISR
+    DRN_EXIT_CRITICAL_SECTION(usis);
     return (char *) previousHeapEnd;
 }
 //! non-reentrant sbrk uses is actually reentrant by using current context
@@ -192,11 +208,20 @@ char * _sbrk(int incr) { return sbrk(incr); };
   static UBaseType_t malLock_uxSavedInterruptStatus;
 #endif
 void __malloc_lock(struct _reent *r)   {
-  configASSERT( !xPortIsInsideInterrupt() ); // Make damn sure no more mallocs inside ISRs!!
+  #if defined(MALLOCS_INSIDE_ISRs)
+    DRN_ENTER_CRITICAL_SECTION(malLock_uxSavedInterruptStatus);
+  #else
+    bool insideAnISR = xPortIsInsideInterrupt();
+    configASSERT( !insideAnISR ); // Make damn sure no more mallocs inside ISRs!!
   vTaskSuspendAll();
+  #endif
 };
 void __malloc_unlock(struct _reent *r) {
+  #if defined(MALLOCS_INSIDE_ISRs)
+    DRN_EXIT_CRITICAL_SECTION(malLock_uxSavedInterruptStatus);
+  #else
   (void)xTaskResumeAll();
+  #endif
 };
 
 // newlib also requires implementing locks for the application's environment memory space,
