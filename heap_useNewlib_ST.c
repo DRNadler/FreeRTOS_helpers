@@ -60,6 +60,7 @@
 // =======================================  Configuration  ========================================
 // These configuration symbols could be provided by from build...
 #define STM_VERSION // Replace sane LD symbols with STM CubeMX's poor standard exported LD symbols
+#define ISR_STACK_LENGTH_BYTES  (configISR_STACK_SIZE_WORDS*4)  // bytes to reserve for ISR (MSP) stack
 // =======================================  Configuration  ========================================
 // ================================================================================================
 
