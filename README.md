@@ -46,8 +46,14 @@ On ARM, FreeRTOS ISRs run on the dedicated MSP stack, allocated at top of RAM. T
 To use port_DRN.c, exclude FreeRTOS amazon-freertos/freertos_kernel/portable/GCC/ARM_CM4F/port.c from your build and add port_DRN.c. Ensure you've got required space allocation in your LD, then configure your MSP stack size and enable MSP checking by adding to your FreeRTOSconfig.h:
 
     // DRN ISR (MSP) stack initialization and checking
+    #if !defined(EXTERNC)
+      #if defined(__cplusplus)
+        #define EXTERNC extern "C"
+      #else
+        #define EXTERNC extern
+      #endif
+    #endif
     #define configISR_STACK_SIZE_WORDS (0x100) // in WORDS, must be valid constant for GCC assembler
     #define configSUPPORT_ISR_STACK_CHECK  1   // DRN initialize and check ISR stack
-    UBaseType_t xUnusedISRstackWords( void );  // check unused amount at runtime
-
+    EXTERNC unsigned long /*UBaseType_t*/ xUnusedISRstackWords( void );  // check unused amount at runtime
 # ToDo: Add The Other Tools...

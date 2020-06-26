@@ -102,7 +102,7 @@
         char *prev_heap_end;
         if (heap_end == 0) heap_end = &end;
         prev_heap_end = heap_end;
-        if (heap_end + incr > stack_ptr) // of course, always true for FreeRTOS task stacks
+        if (heap_end + incr > stack_ptr) // Fails here: always true for FreeRTOS task stacks
         {
             errno = ENOMEM; // ...so first call inside a FreeRTOS task lands here
             return (caddr_t) -1;

@@ -1,3 +1,5 @@
+// Includes DRN additions for MSP (ISR) stack-use checking
+
 /*
  * FreeRTOS Kernel V10.2.1
  * Copyright (C) 2019 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
