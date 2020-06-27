@@ -9,6 +9,7 @@
  *
  * \author Dave Nadler
  * \date 20-August-2019
+ * \version 27-Jun-2020 Correct "FreeRTOS.h" capitalization, commentary
  * \version 24-Jun-2020 commentary only
  * \version 11-Sep-2019 malloc accounting, comments, newlib version check
  *
