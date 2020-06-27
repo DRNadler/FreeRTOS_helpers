@@ -37,7 +37,7 @@ The tools below don't address the driver mess, but at least aid in basic use of 
 
 **The heap_useNewlib solution I've provided here is used in dozens if not hundreds of applications.** heap_useNewlib is distributed by NXP as part of the MCUXpresso SDK, part of [Erich Styger's popular Processor Expert tool](https://mcuoneclipse.com/category/processor-expert/), some FreeRTOS-on-Arduino packages like [ST's stm32duino](https://github.com/stm32duino/STM32FreeRTOS), etc. It is not included in FreeRTOS because I did not provide versions for all the compilers FreeRTOS supports. Please see my web pages for details about the problem and how to use the solution (code, FreeRTOS, and linker configuration) provided in this repository:
 * [NXP MCUXpresso users](http://www.nadler.com/embedded/NXP_newlibAndFreeRTOS.html)
-* [ST RubeMX users](http://www.nadler.com/embedded/NXP_newlibAndFreeRTOS.html)
+* [ST RubeMX users](http://www.nadler.com/embedded/newlibAndFreeRTOS.html)
 * Other MCUs and toolchains: start with the NXP version
 
 # FreeRTOS ISR Stack Use Check (for Arm Cortex M4-7)
