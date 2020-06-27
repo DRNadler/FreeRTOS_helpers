@@ -60,7 +60,7 @@
 // =======================================  Configuration  ========================================
 // These configuration symbols could be provided by from build...
 #define STM_VERSION // Replace sane LD symbols with STM CubeMX's poor standard exported LD symbols
-#define ISR_STACK_LENGTH_BYTES  (configISR_STACK_SIZE_WORDS*4)  // bytes to reserve for ISR (MSP) stack
+#define ISR_STACK_LENGTH_BYTES (configISR_STACK_SIZE_WORDS*4) // bytes to reserve for ISR (MSP) stack
 // =======================================  Configuration  ========================================
 // ================================================================================================
 
@@ -76,7 +76,7 @@
   #warning "This wrapper was verified for newlib versions 2.5 - 3.1; please ensure newlib's external requirements for malloc-family are unchanged!"
 #endif
 
-#include "freeRTOS.h" // defines public interface we're implementing here
+#include "FreeRTOS.h" // defines public interface we're implementing here
 #if !defined(configUSE_NEWLIB_REENTRANT) ||  (configUSE_NEWLIB_REENTRANT!=1)
   #warning "#define configUSE_NEWLIB_REENTRANT 1 // Required for thread-safety of newlib sprintf, dtoa, strtok, etc..."
   // If you're *REALLY* sure you don't need FreeRTOS's newlib reentrancy support, comment out the above warning...
