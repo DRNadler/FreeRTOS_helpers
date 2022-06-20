@@ -8,7 +8,7 @@ We see lots of vendors, application developers, and a few consultants, Pontifica
 We've delivered many successful products using FreeRTOS (more than a dozen for sure but truly I've lost count). This on MCUs like PIC24F, PIC32MX, TI MSP430, and ARM Cortex from M0 through M7 from Freescale, NXP, Silicon Labs, etc. FreeRTOS supports a number of compilers, though here we primarily use GCC. We and our community are forever in debt to Richard Barry for his most excellent efforts (and glad I was able to help a bit with the Cortex-M0 port). So, what's not to like?
 
 FreeRTOS provides a truly excellent OS, with pretty much all the features you need for non-trivial applications on MCUs (single-core, anyway). However, **FreeRTOS does NOT provide** integration with the MCU vendor toolchains; that's left to the MCU vendors. Most importantly for typical embedded applications, FreeRTOS does not provide nor integrate use of:
-* device drivers (ethernet, serial, USB, cyrpto, etc.)
+* device drivers (ethernet, serial, USB, crypto, etc.)
 * standard APIs for device drivers (ie sending/receiving data via USB-CDC)
 * USB Stack
 * low-level memory management (sbrk level for many toolchains)
