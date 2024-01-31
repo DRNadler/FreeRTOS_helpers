@@ -1,0 +1,6 @@
+ST only: xPortIsInsideInterrupt is not defined for all ports.
+CMSIS should always be available so use:
+inline bool WeAreInsideISR() {
+    // IPSR contains current active exception (0 if none)
+    return __get_IPSR() != 0;
+}

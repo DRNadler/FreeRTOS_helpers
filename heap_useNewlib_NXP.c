@@ -9,6 +9,8 @@
  *
  * \author Dave Nadler
  * \date 22-July-2017
+ * \version  3-Jan-2023 Correct _malloc_r signature+call for malloc wrap
+ * \version  3-Jan-2023 Function declarations and unused arguments for picky compiler
  * \version 27-Jun-2020 Correct "FreeRTOS.h" capitalization, commentary
  * \version 24-Jun-2020 commentary only
  * \version 11-Sep-2019 malloc accounting, comments, newlib version check
@@ -139,6 +141,7 @@ static int heapBytesRemaining = (int)&HEAP_SIZE; // that's (&__HeapLimit)-(&__He
 
 //! _sbrk_r version supporting reentrant newlib (depends upon above symbols defined by linker control file).
 void * _sbrk_r(struct _reent *pReent, int incr) {
+	(void)pReent;
     static char *currentHeapEnd = &__HeapBase;
     vTaskSuspendAll(); // Note: safe to use before FreeRTOS scheduler started, but not within an ISR
     if (currentHeapEnd + incr > &__HeapLimit) {
@@ -174,17 +177,17 @@ char * sbrk(int incr) { return _sbrk_r(_impure_ptr, incr); }
 //! _sbrk is a synonym for sbrk.
 char * _sbrk(int incr) { return sbrk(incr); }
 
-void __malloc_lock(struct _reent *p)   { configASSERT( !xPortIsInsideInterrupt() ); // Make damn sure no mallocs inside ISRs!!
+void __malloc_lock(struct _reent *p)   { (void)p; configASSERT( !xPortIsInsideInterrupt() ); // Make damn sure no mallocs inside ISRs!!
                                                vTaskSuspendAll(); }
-void __malloc_unlock(struct _reent *p) { (void)xTaskResumeAll();  }
+void __malloc_unlock(struct _reent *p) { (void)p; (void)xTaskResumeAll();  }
 
 // newlib also requires implementing locks for the application's environment memory space,
 // accessed by newlib's setenv() and getenv() functions.
 // As these are trivial functions, momentarily suspend task switching (rather than semaphore).
 // Not required (and trimmed by linker) in applications not using environment variables.
 // ToDo: Move __env_lock/unlock to a separate newlib helper file.
-void __env_lock()    {       vTaskSuspendAll(); }
-void __env_unlock()  { (void)xTaskResumeAll();  }
+void __env_lock(void)    {       vTaskSuspendAll(); }
+void __env_unlock(void)  { (void)xTaskResumeAll();  }
 
 #if 1 // Provide malloc debug and accounting wrappers
   /// /brief  Wrap malloc/malloc_r to help debug who requests memory and why.
@@ -203,12 +206,12 @@ void __env_unlock()  { (void)xTaskResumeAll();  }
     return p;
   }
   void *__wrap__malloc_r(void *reent, size_t nbytes) {
-    extern void * __real__malloc_r(size_t nbytes);
+    extern void * __real__malloc_r(void *reent,size_t nbytes);
     if(!inside_malloc) {
       MallocCallCnt++;
       TotalMallocdBytes += nbytes;
     }
-    void *p = __real__malloc_r(nbytes);
+    void *p = __real__malloc_r(reent,nbytes);
     return p;
   }
 #endif

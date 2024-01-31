@@ -9,7 +9,9 @@
  *
  * \author Dave Nadler
  * \date 20-August-2019
- * \version 27-Jun-2020 Correct "FreeRTOS.h" capitalization, commentary
+ * \version  3-Jan-2023 Correct _malloc_r signature+call for malloc wrap
+ * \version  3-Jan-2023 Function declarations and unused arguments for picky compiler
+* \version 27-Jun-2020 Correct "FreeRTOS.h" capitalization, commentary
  * \version 24-Jun-2020 commentary only
  * \version 11-Sep-2019 malloc accounting, comments, newlib version check
  *
@@ -157,6 +159,7 @@ extern char __HeapBase, __HeapLimit;  // symbols from linker LD command file
 
 //! _sbrk_r version supporting reentrant newlib (depends upon above symbols defined by linker control file).
 void * _sbrk_r(struct _reent *pReent, int incr) {
+	(void)pReent;
     #ifdef MALLOCS_INSIDE_ISRs // block interrupts during free-storage use
       UBaseType_t usis; // saved interrupt status
     #endif
@@ -232,8 +235,8 @@ void __malloc_unlock(struct _reent *r) {
 // As these are trivial functions, momentarily suspend task switching (rather than semaphore).
 // Not required (and trimmed by linker) in applications not using environment variables.
 // ToDo: Move __env_lock/unlock to a separate newlib helper file.
-void __env_lock()    {       vTaskSuspendAll(); }
-void __env_unlock()  { (void)xTaskResumeAll();  }
+void __env_lock(void)    {       vTaskSuspendAll(); }
+void __env_unlock(void)  { (void)xTaskResumeAll();  }
 
 #if 1 // Provide malloc debug and accounting wrappers
   /// /brief  Wrap malloc/malloc_r to help debug who requests memory and why.
@@ -252,13 +255,12 @@ void __env_unlock()  { (void)xTaskResumeAll();  }
     return p;
   }
   void *__wrap__malloc_r(void *reent, size_t nbytes) {
-    (void)(reent);
-    extern void * __real__malloc_r(size_t nbytes);
+    extern void * __real__malloc_r(void *reent,size_t nbytes);
     if(!inside_malloc) {
       MallocCallCnt++;
       TotalMallocdBytes += nbytes;
     }
-    void *p = __real__malloc_r(nbytes);
+    void *p = __real__malloc_r(reent,nbytes);
     return p;
   }
 #endif
