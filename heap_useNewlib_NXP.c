@@ -143,6 +143,11 @@ static int heapBytesRemaining = (int)&HEAP_SIZE; // that's (&__HeapLimit)-(&__He
 void * _sbrk_r(struct _reent *pReent, int incr) {
 	(void)pReent;
     static char *currentHeapEnd = &__HeapBase;
+    char *previousHeapEnd = currentHeapEnd;
+    if(0 == incr) {
+        // don't suspend all tasks if nothing has to change
+        return (char *) previousHeapEnd;
+    }
     vTaskSuspendAll(); // Note: safe to use before FreeRTOS scheduler started, but not within an ISR
     if (currentHeapEnd + incr > &__HeapLimit) {
         // Ooops, no more memory available...
@@ -162,7 +167,6 @@ void * _sbrk_r(struct _reent *pReent, int incr) {
         return (char *)-1; // the malloc-family routine that called sbrk will return 0
     }
     // 'incr' of memory is available: update accounting and return it.
-    char *previousHeapEnd = currentHeapEnd;
     currentHeapEnd += incr;
     heapBytesRemaining -= incr;
     #ifndef NDEBUG
