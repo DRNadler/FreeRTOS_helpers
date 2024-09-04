@@ -149,6 +149,7 @@ void * _sbrk_r(struct _reent *pReent, int incr) {
         #if( configUSE_MALLOC_FAILED_HOOK == 1 )
         {
             extern void vApplicationMallocFailedHook( void );
+            xTaskResumeAll();  // Note: safe to use before FreeRTOS scheduler started, but not within an ISR;
             vApplicationMallocFailedHook();
         }
         #elif defined(configHARD_STOP_ON_MALLOC_FAILURE)
