@@ -158,7 +158,7 @@ extern char __HeapBase, __HeapLimit;  // symbols from linker LD command file
 // __malloc_lock before calling _sbrk_r(). Note vTaskSuspendAll/xTaskResumeAll support nesting.
 
 //! _sbrk_r version supporting reentrant newlib (depends upon above symbols defined by linker control file).
-void * _sbrk_r(struct _reent *pReent, int incr) {
+void * _sbrk_r(struct _reent *pReent, ptrdiff_t incr) {
 	(void)pReent;
     #ifdef MALLOCS_INSIDE_ISRs // block interrupts during free-storage use
       UBaseType_t usis; // saved interrupt status
@@ -204,9 +204,9 @@ void * _sbrk_r(struct _reent *pReent, int incr) {
 }
 //! non-reentrant sbrk uses is actually reentrant by using current context
 // ... because the current _reent structure is pointed to by global _impure_ptr
-char * sbrk(int incr) { return _sbrk_r(_impure_ptr, incr); }
+char * sbrk(int ptrdiff_t) { return _sbrk_r(_impure_ptr, incr); }
 //! _sbrk is a synonym for sbrk.
-char * _sbrk(int incr) { return sbrk(incr); }
+char * _sbrk(int ptrdiff_t) { return sbrk(incr); }
 
 #ifdef MALLOCS_INSIDE_ISRs // block interrupts during free-storage use
   static UBaseType_t malLock_uxSavedInterruptStatus;

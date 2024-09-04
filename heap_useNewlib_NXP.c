@@ -140,7 +140,7 @@ static int heapBytesRemaining = (int)&HEAP_SIZE; // that's (&__HeapLimit)-(&__He
 // __malloc_lock before calling _sbrk_r(). Note vTaskSuspendAll/xTaskResumeAll support nesting.
 
 //! _sbrk_r version supporting reentrant newlib (depends upon above symbols defined by linker control file).
-void * _sbrk_r(struct _reent *pReent, int incr) {
+void * _sbrk_r(struct _reent *pReent, ptrdiff_t incr) {
 	(void)pReent;
     static char *currentHeapEnd = &__HeapBase;
     vTaskSuspendAll(); // Note: safe to use before FreeRTOS scheduler started, but not within an ISR
@@ -174,9 +174,9 @@ void * _sbrk_r(struct _reent *pReent, int incr) {
 }
 //! non-reentrant sbrk uses is actually reentrant by using current context
 // ... because the current _reent structure is pointed to by global _impure_ptr
-char * sbrk(int incr) { return _sbrk_r(_impure_ptr, incr); }
+char * sbrk(ptrdiff_t incr) { return _sbrk_r(_impure_ptr, incr); }
 //! _sbrk is a synonym for sbrk.
-char * _sbrk(int incr) { return sbrk(incr); }
+char * _sbrk(ptrdiff_t incr) { return sbrk(incr); }
 
 void __malloc_lock(struct _reent *p)   { (void)p; configASSERT( !xPortIsInsideInterrupt() ); // Make damn sure no mallocs inside ISRs!!
                                                vTaskSuspendAll(); }
