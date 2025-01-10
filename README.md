@@ -20,13 +20,18 @@ As the vendor-provided bits are usually crap, it often takes more time/money to 
 ## We Support FreeRTOS! Yeah! Woo Hoo!
 Well, so the MCU vendors loudly lie. The reality is horrendous. If you actually need to build an application that is both performant and reliable, the stuff provided by MCU vendors is often completely unworkable. Typical fuckups include:
 * Memory management is completely broken. Your application will crash or behave mysteriously and corrupt memory when you try to use sprintf, dtoa, strtok, or other commonly-utilitized C-RTL functions. See the Heap_useNewlib section below for a solution to this one (especially if you're trying to use ST MCUs).
-* Drivers do not use FreeRTOS facilities. For performance and interrupt latency, we expect and **require** minimal code in ISRs moving data to/from higher layers via RTOS facilities (see https://www.freertos.org/deferred_interrupt_processing.html for a great explanation). Instead we see crap code like:  
--- ST: Incomplete, buggy, and horrendously coded USB stack executed almost entirely within ISR, even using malloc inside ISR! Incomplete USB functionality, inadequate performance, and hugely excessive interrupt latency. As an added bonus, drops USB packets under load.  
--- ST: Buggy ethernet drivers: Missing required memory barriers, not properly coded for context-safety (ie race conditions between ISR code and foreground code). Still severely broken as of November-2023, see: [ST library bugs](https://community.st.com/t5/stm32-mcus-embedded-software/stm32f4-library-issues-fixed/m-p/54944).<br>
--- ST: Improper LwIP integration  
--- ST: Crypto hardware, but no drivers integrated into TCP/IP to support HTTPS etc.  
--- Microchip: buggy drivers polled in a single timer-based thread not properly integrated with FreeRTOS. You probably won't notice this if you try to use Microchip's Harmony framework, as most likely the output of their 'configuration wizard' won't even compile!  
--- Silicon Labs: USB driver incomplete, buggy, and not integrated with FreeRTOS.
+* Drivers do not use FreeRTOS facilities and/or are completely broken. For performance and interrupt latency, we expect and **require** minimal code in ISRs moving data to/from higher layers via RTOS facilities (see https://www.freertos.org/deferred_interrupt_processing.html for a great explanation). Instead we see crap code like:  
+    - ST:
+        - Incomplete, buggy, and horrendously coded USB stack executed almost entirely within ISR, even using malloc inside ISR! Incomplete USB functionality, inadequate performance, and hugely excessive interrupt latency. As an added bonus, drops USB packets under load.  
+        - Buggy ethernet drivers: Missing required memory barriers, not properly coded for context-safety (ie race conditions between ISR code and foreground code). Still severely broken as of November-2023, see: [ST library bugs](https://community.st.com/t5/stm32-mcus-embedded-software/stm32f4-library-issues-fixed/m-p/54944).<br>
+        - Improper LwIP integration  
+        - Crypto hardware, but no drivers integrated into TCP/IP to support HTTPS etc.  
+    - Microchip: buggy drivers polled in a single timer-based thread not properly integrated with FreeRTOS. You probably won't notice this if you try to use Microchip's Harmony framework, as most likely the output of their 'configuration wizard' won't even compile!  
+    - Silicon Labs: USB driver incomplete, buggy, and not integrated with FreeRTOS.
+    - NXP iMX.RT drivers:
+      - [SPI driver sends bytes in wrong order](https://community.nxp.com/t5/i-MX-RT/LPSPI-driver-bug-Bytes-sent-IN-WRONG-ORDER/m-p/1644776)
+      - [SPI driver timing all wrong](https://community.nxp.com/t5/i-MX-RT/Further-serious-bugs-in-LPSPI-driver/td-p/1833857)
+      - USB stack incomplete and not properly integrated with FreeRTOS. Does not support USB OTG (hardware does just fine).
 
 I could go on but it gives me a headache. Again, the consequence of this sad state of affairs is it often costs more time/money to get a working and performant platform than to create your actual application. You get to rewrite and stress-test drivers and their RTOS integration for your chosen peripherals, and if you survive that maybe you can develop your application... 
 
