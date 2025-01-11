@@ -172,6 +172,11 @@ void * _sbrk_r(struct _reent *pReent, int incr) {
     char* limit = (xTaskGetSchedulerState()==taskSCHEDULER_NOT_STARTED) ?
             stack_ptr   :  // Before scheduler is started, limit is stack pointer (risky!)
             &__HeapLimit-ISR_STACK_LENGTH_BYTES;  // Once running, OK to reuse all remaining RAM except ISR stack (MSP) stack
+    char *previousHeapEnd = currentHeapEnd;
+    if(0 == incr) {
+        // don't go into a critical section if nothing has to change
+        return (char *) previousHeapEnd;
+    }
     DRN_ENTER_CRITICAL_SECTION(usis);
     if (currentHeapEnd + incr > limit) {
         // Ooops, no more memory available...
@@ -193,7 +198,6 @@ void * _sbrk_r(struct _reent *pReent, int incr) {
         return (char *)-1; // the malloc-family routine that called sbrk will return 0
     }
     // 'incr' of memory is available: update accounting and return it.
-    char *previousHeapEnd = currentHeapEnd;
     currentHeapEnd += incr;
     heapBytesRemaining -= incr;
     #ifndef NDEBUG
