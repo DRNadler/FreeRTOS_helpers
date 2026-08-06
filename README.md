@@ -1,18 +1,19 @@
 # FreeRTOS Helpers
 We see lots of vendors, application developers, and a few consultants, Pontificating and Spewing about how solid their tools and processes and applications are, citing MISRA-compliance and other bullox. If they would shut up for a moment and glance downwards, they'd notice they are wearing no pants and standing in quicksand, in the middle of a swamp and surrounded by crocodiles...   
-![...](https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Quicksandwarning.JPG/440px-Quicksandwarning.JPG)
 
-**If you're using FreeRTOS and GCC, I hope the tools in this repository can help you create a stable platform for your applications using FreeRTOS**, at least a bit... After all, as my wife sometimes reminds it is best to wear pants, and most prudent to avoid standing in quicksand amidst crocodiles.
+![...](https://upload.wikimedia.org/wikipedia/commons/9/90/Australian_water_%26_recreation_safety_sign_WS04.svg?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original)
+
+**If you're using FreeRTOS and GCC, I hope the tools in this repository can help you create a stable platform for your applications using FreeRTOS**, at least a bit... After all, as my wife used to remind it is best to wear pants, and most prudent to avoid standing in quicksand amidst crocodiles.
 
 ## Thoughts about FreeRTOS
-We've delivered many successful products using FreeRTOS (more than a dozen for sure but truly I've lost count). This on MCUs like PIC24F, PIC32MX, TI MSP430, and ARM Cortex from M0 through M7 from Freescale, NXP, Silicon Labs, etc. FreeRTOS supports a number of compilers, though here we primarily use GCC. We and our community are forever in debt to Richard Barry for his most excellent efforts (and glad I was able to help a bit with the Cortex-M0 port). So, what's not to like?
+We've delivered many successful products using FreeRTOS (more than a dozen for sure but truly I've lost count). This on MCUs like PIC24F, PIC32MX, TI MSP430, and ARM Cortex from M0 through M7 from Freescale, NXP, Silicon Labs, etc. FreeRTOS supports a number of compilers, though here we primarily use GCC. Our FreeRTOS community is forever in debt to Richard Barry for his most excellent efforts (and glad I was able to help a bit with the Cortex-M0 port). So, what's not to like?
 
 FreeRTOS provides a truly excellent OS, with pretty much all the features you need for non-trivial applications on MCUs (single-core, anyway). However, **FreeRTOS does NOT provide** integration with the MCU vendor toolchains; that's left to the MCU vendors. Most importantly for typical embedded applications, FreeRTOS does not provide nor integrate use of:
-* device drivers (ethernet, serial, USB, crypto, etc.)
-* standard APIs for device drivers (ie sending/receiving data via USB-CDC)
-* USB Stack
+* integration with C-RTL (FreeRTOS assumes a working C tool chain and C library)
 * low-level memory management (sbrk level for many toolchains)
-* integration with C-RTL (FreeRTOS assumes a working C toolchain)
+* standard APIs for device drivers (ie sending/receiving data via USB-CDC)
+* device drivers (ethernet, serial, USB, crypto, etc.)
+* USB Stack
 * LwIP (recently documented on FreeRTOS site as more performant than FreeRTOS TCP/IP)
 
 As the vendor-provided bits are usually crap, it often takes more time/money to create a working basic platform than the actual target application. Not a great state of affairs. And as the complexity of the MCUs and peripherals (and required drivers) continues to increase, the situation worsens. Way back we used to expect to write all device drivers ourselves, but that is no longer sensible from cost nor time-to-market perspectives.
@@ -40,7 +41,7 @@ The tools below don't address the driver mess, but at least aid in basic use of 
 # Safe memory management: heap_useNewlib
 [GNU ARM Embedded Toolchain distributions](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm) include a non-polluting reduced-size runtime library called newlib (or newlib-nano for the smallest variant). If you use an MCU-vendor-distributed toolchain you're typically using these tools. Unfortunately, newlib internally uses free storage (malloc/free) in startling places within the C runtime library. Thus, newlib free storage routines get dragged in and used unexpectedly. Often MCU vendors don't properly support newlib use within FreeRTOS. Thus **your application will crash or behave mysteriously and corrupt memory when you try to use sprintf, dtoa, strtok, or other commonly-utilitized C-RTL functions.**
 
-**The heap_useNewlib solution I've provided here is used in dozens if not hundreds of applications.** heap_useNewlib is distributed by NXP as part of the MCUXpresso SDK, part of [Erich Styger's popular Processor Expert tool](https://mcuoneclipse.com/category/processor-expert/), some FreeRTOS-on-Arduino packages like [ST's stm32duino](https://github.com/stm32duino/STM32FreeRTOS), etc. It is not included in FreeRTOS because I did not provide versions for all the compilers FreeRTOS supports. Please see my web pages for details about the problem and how to use the solution (code, FreeRTOS, and linker configuration) provided in this repository:
+**The heap_useNewlib solution I've provided here is used in hundreds if not thousands of applications.** heap_useNewlib is distributed by NXP as part of the MCUXpresso SDK, part of [Erich Styger's popular Processor Expert tool](https://mcuoneclipse.com/category/processor-expert/), some FreeRTOS-on-Arduino packages like [ST's stm32duino](https://github.com/stm32duino/STM32FreeRTOS), etc. It is not included in FreeRTOS because I did not provide versions for all the compilers FreeRTOS supports. Please see my web pages for details about the problem and how to use the solution (code, FreeRTOS, and linker configuration) provided in this repository:
 * [NXP MCUXpresso users](http://www.nadler.com/embedded/NXP_newlibAndFreeRTOS.html)
 * [ST RubeMX users](http://www.nadler.com/embedded/newlibAndFreeRTOS.html)
 * Other MCUs and toolchains: start with the NXP version
