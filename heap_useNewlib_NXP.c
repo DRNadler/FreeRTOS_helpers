@@ -9,6 +9,8 @@
  *
  * \author Dave Nadler
  * \date 22-July-2017
+ * \version 13-Aug-2026 Use *recursive* mutex for malloc lock as required by newlib
+ * \version 13-Aug-2026 Don't call vTaskSuspendAll/xTaskResumeAll before scheduler started as they leave interrupts disabled.
  * \version  3-Jan-2023 Correct _malloc_r signature+call for malloc wrap
  * \version  3-Jan-2023 Function declarations and unused arguments for picky compiler
  * \version 27-Jun-2020 Correct "FreeRTOS.h" capitalization, commentary
@@ -27,7 +29,7 @@
  *
  *
  * \copyright
- * (c) Dave Nadler 2017-2020, All Rights Reserved.
+ * (c) Dave Nadler 2017-2026, All Rights Reserved.
  * Web:         http://www.nadler.com
  * email:       drn@nadler.com
  *
@@ -66,8 +68,8 @@
 #include <stddef.h>
 
 #include "newlib.h"
-#if ((__NEWLIB__ == 2) && (__NEWLIB_MINOR__ < 5)) || ((__NEWLIB__ == 4) && (__NEWLIB_MINOR__ > 2) || (__NEWLIB__ < 2) || (__NEWLIB__ > 4))
-  #warning "This wrapper was verified for newlib versions 2.5 - 4.2; please ensure newlib's external requirements for malloc-family are unchanged!"
+#if ((__NEWLIB__ == 2) && (__NEWLIB_MINOR__ < 5)) || ((__NEWLIB__ == 4) && (__NEWLIB_MINOR__ > 3) || (__NEWLIB__ < 2) || (__NEWLIB__ > 4))
+  #warning "This wrapper was verified for newlib versions 2.5 - 4.3; please ensure newlib's external requirements for malloc-family are unchanged!"
 #endif
 
 #include "FreeRTOS.h" // defines public interface we're implementing here
@@ -76,6 +78,7 @@
   // If you're *REALLY* sure you don't need FreeRTOS's newlib reentrancy support, comment out the above warning...
 #endif
 #include "task.h"
+#include "semphr.h"
 
 // ================================================================================================
 // External routines required by newlib's malloc (sbrk/_sbrk, __malloc_lock/unlock)
@@ -134,7 +137,7 @@
     static int totalBytesProvidedBySBRK = 0;
 #endif
 extern char __HeapBase, __HeapLimit, HEAP_SIZE;  // make sure to define these symbols in linker command file
-static int heapBytesRemaining = (int)&HEAP_SIZE; // that's (&__HeapLimit)-(&__HeapBase)
+/*static*/ int heapBytesRemaining = (int)&HEAP_SIZE; // that's (&__HeapLimit)-(&__HeapBase)
 
 // Use of vTaskSuspendAll() in _sbrk_r() is normally redundant, as newlib malloc family routines call
 // __malloc_lock before calling _sbrk_r(). Note vTaskSuspendAll/xTaskResumeAll support nesting.
@@ -148,7 +151,7 @@ void * _sbrk_r(struct _reent *pReent, int incr) {
         // Ooops, no more memory available...
         #if( configUSE_MALLOC_FAILED_HOOK == 1 )
         {
-            extern void vApplicationMallocFailedHook( void );
+            // defined in portable.h: extern void vApplicationMallocFailedHook( void );
             vApplicationMallocFailedHook();
         }
         #elif defined(configHARD_STOP_ON_MALLOC_FAILURE)
@@ -177,17 +180,51 @@ char * sbrk(int incr) { return _sbrk_r(_impure_ptr, incr); }
 //! _sbrk is a synonym for sbrk.
 char * _sbrk(int incr) { return sbrk(incr); }
 
-void __malloc_lock(struct _reent *p)   { (void)p; configASSERT( !xPortIsInsideInterrupt() ); // Make damn sure no mallocs inside ISRs!!
-                                               vTaskSuspendAll(); }
-void __malloc_unlock(struct _reent *p) { (void)p; (void)xTaskResumeAll();  }
+static SemaphoreHandle_t xMallocRecursiveMutex = NULL;
+static StaticSemaphore_t xMallocRecursiveMutexBuffer;
+
+static SemaphoreHandle_t prvMallocRecursiveMutex(void) {
+    if(xMallocRecursiveMutex == NULL) {
+        vTaskSuspendAll(); // serialize lazy creation without depending on malloc
+        if(xMallocRecursiveMutex == NULL) {
+            xMallocRecursiveMutex = xSemaphoreCreateRecursiveMutexStatic(&xMallocRecursiveMutexBuffer);
+            configASSERT(xMallocRecursiveMutex != NULL);
+        }
+        (void)xTaskResumeAll();
+    }
+    return xMallocRecursiveMutex;
+}
+
+void __malloc_lock(struct _reent *p) {
+    (void)p;
+    configASSERT( !xPortIsInsideInterrupt() ); // Make damn sure no mallocs inside ISRs!!
+    if(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+        const BaseType_t result = xSemaphoreTakeRecursive(prvMallocRecursiveMutex(), portMAX_DELAY);
+        configASSERT(result == pdTRUE);
+        (void)result;
+    } else {
+        // When the scheduler is not running, no task switch can occur so locking is not needed (and doesn't work).
+        // Do not call FreeRTOS vTaskSuspendAll()/xTaskResumeAll() because they leave interrupts disabled.
+    }
+}
+void __malloc_unlock(struct _reent *p) {
+    (void)p;
+    if(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+        const BaseType_t result = xSemaphoreGiveRecursive(prvMallocRecursiveMutex());
+        configASSERT(result == pdTRUE);
+        (void)result;
+    } else {
+        // Matched no-op for the scheduler-not-running malloc lock path above.
+    }
+}
 
 // newlib also requires implementing locks for the application's environment memory space,
 // accessed by newlib's setenv() and getenv() functions.
 // As these are trivial functions, momentarily suspend task switching (rather than semaphore).
 // Not required (and trimmed by linker) in applications not using environment variables.
 // ToDo: Move __env_lock/unlock to a separate newlib helper file.
-void __env_lock(void)    {       vTaskSuspendAll(); }
-void __env_unlock(void)  { (void)xTaskResumeAll();  }
+void __env_lock(void)    { if(xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)      vTaskSuspendAll(); }
+void __env_unlock(void)  { if(xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) (void)xTaskResumeAll(); }
 
 #if 1 // Provide malloc debug and accounting wrappers
   /// /brief  Wrap malloc/malloc_r to help debug who requests memory and why.
