@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta content="Nadler: newlib and FreeRTOS" name="Description">
+  <meta content="Dave Nadler" name="author">
+  <meta content="Copyright (c) 2017-2020 Dave Nadler, all rights reserved." name="Copyright">
+  <meta content="Nadler embedded C/C++ memory allocation GNU GCC newlib FreeRTOS" name="keywords">
+  <title>newlib and FreeRTOS</title>
+  <style media="screen" type="text/css">
+        html, body, div, header, footer, aside, nav, article, section   { margin: 0; padding: 0; }
+        header, footer, aside, nav, article, section    { display: block; }
+        body            { color: #333; font: 15px Helvetica, Arial, sans-serif; line-height: 19px; }
+        h1              { padding: 10px 0 0 0/*9px*/; line-height: 23px; }
+        h2              { color: #333; line-height: 23px; }
+        a               { color: #337810; }
+        p               { margin: 13px 0 0 0/*18px*/; }
+        li              { margin:  0px 5px 0px 5px;}
+        ul              { padding: 0 18px 0 18px  /*9px*/; margin: 5px 0 0 0;}
+        ol              { padding: 0 18px 0 18px  /*9px*/; margin: 5px 0 0 0;}
+        code            { font-family: 'Source Sans Pro', Consolas, 'Lucida Sans Typewriter'; font-weight: normal; font-style: normal; text-decoration: none; }
+        #container      { width: 800px/*780px*/; margin: 0 auto; }
+
+        /* Header */
+        header          { background: #333; border-bottom: 3px solid #aaa; margin: 15px 0 15px 0;}
+        header h1       { color: #fff; margin: 10px 0 3px 0; padding: 20px 18px 0; }
+        header p        { color: #ccc; font-size: 15px; font-weight: bold; padding: 0 18px; }
+        header li       { color: #ccc; font-size: 15px; font-weight: bold; padding: 0 18px; }
+        
+        /* Content Style */
+        span.freescale { background: #FFA56D; display: inline-block; padding: 3px 3px 3px 3px; }
+        span.code { font-family: 'Source Sans Pro', Consolas, 'Lucida Sans Typewriter'; font-weight: normal; font-style: normal; text-decoration: none; }
+		span.howto { background: #b4ffab; display: inline-block; padding: 3px 3px 3px 3px; }
+
+        nav     { background: #FFA56D; margin-left: 18px; }
+        nav ul  { padding: 0 18px 9px; }
+        #extra          { margin: 0 18px; }
+        #extra small    { font-size: 11px; line-height: 18px; }
+        #content        { border-bottom: 1px solid #ccc; margin: 0 18px; }
+        #content p, #extra p { padding-right: 18px; }
+        
+        /* Content Positioning and Size */
+        nav     { float: right; width: 350px; padding: 0px 18px 18px 18px }
+        #content        {  }
+        #extra          { float: left; width: 350px; }      /* Footer */
+        footer          { background: #666; border-bottom: 10px solid #fff; clear: both; padding: 18px 18px 8px 18px }
+        footer a        { color: #fff; }
+        footer p        { color: #ccc; margin: 0; padding: 0 18px 10px; }
+        footer ul       { border-bottom: 1px solid #999; list-style: none; margin: 0 18px 6px; padding: 10px 0 6px; }
+        footer li       { display: inline; font-size: 12px; font-weight: bold; padding-right: 5px; }
+		
+		.showCodeBtn {
+          font-size: 15px;
+          font-weight: bold;
+          display: inline-block;
+		  border: 0.4em solid #060729;
+		  border-radius: 15%;
+       /*   margin: 0 auto;
+          color: #dcfbb4;
+          background-color: green;
+          
+          border-radius: 50%;
+          transition: all 0.3s;
+        */  box-sizing: border-box;
+        /*  width: 50px;
+          height: 12px; */
+          cursor: pointer;
+          box-shadow: 0 0 0 rgba(0,0,0,0.1), inset 0 0 0 rgba(0,0,0,0.1);
+          text-align: center;
+      }
+
+  </style><!--[if IE]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  <!--  syntaxHighliter sourced from AlexGorbatchev.com  -->
+  <link href="syntaxhighlighter_3.0.83/styles/shCore.css" rel="stylesheet" type="text/css">
+<!--   <link href="syntaxhighlighter_3.0.83/styles/shThemeRDark.css" rel="stylesheet" type="text/css">  -->
+  <link href="syntaxhighlighter_3.0.83/styles/shThemeDefault.css" rel="stylesheet" type="text/css">
+<!--  <script src="syntaxhighlighter_3.0.83/src/XRegExp.js" type="text/javascript"> </script> <!-- XRegExp was bundled with the final shCore.js during build -->
+<!--  <script src="syntaxhighlighter_3.0.83/src/shCore.js" type="text/javascript"> </script>     Uncompiled version -->
+  <script src="syntaxhighlighter_3.0.83/scripts/shCore.js" type="text/javascript"> </script> <!-- Compiled version -->
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushCpp.js" type="text/javascript"> </script>
+<!--
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushCss.js" type="text/javascript"> </script>
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushJava.js" type="text/javascript"> </script>
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushJScript.js" type="text/javascript"> </script>
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushPhp.js" type="text/javascript"> </script>
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushSql.js" type="text/javascript"> </script>
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushVb.js" type="text/javascript"> </script>
+-->
+
+  <script language="javascript">
+  <!--   window.confirm("SH initialization JS started..."); -->
+  SyntaxHighlighter.config.bloggerMode = false;
+  SyntaxHighlighter.defaults.wrap_lines = false;
+    // skip, CVE... SyntaxHighlighter.config.clipboardSwf = 'sh/clipboard.swf';
+  SyntaxHighlighter.all();
+  <!--   window.confirm("SH initialization JS executed"); -->
+  </script>
+</head>
+<body>
+  <div id="container">
+    <header>
+	  <p><br>
+	  June-2020 version for
+      NXP MCUXpresso (example for Kinetis K64F)<br>
+        <a href="http://www.nadler.com/embedded/newlibAndFreeRTOS.html">
+	    See 2020 version for STM's STM32CubeIDE toolchain with newlib 3.0</a> <br>
+      </p>
+      <h1>Background</h1>
+      <p class="description">For reliability, smaller embedded systems typically don't use dynamic memory, thus
+      avoiding associated problems of leakage, fragmentation, and resulting out-of-memory crashes. In Nadler &amp;
+      Associates smaller embedded projects (and large avionics products), we've historically used <b><i>no</i></b> runtime dynamic memory.</p>
+      <p>Some tool chains (and especially some features of C++, the topic of a separate article) <b>require dynamic memory
+      internally, even if your application uses no free storage calls</b>.
+	  The newlib C-runtime library (used in many embedded toolchains) 
+	  internally uses it's own malloc-family routines. 
+	  newlib maintains some internal buffers and requires some support for thread-safety.
+	  </p>
+      <p>This article explains how to use newlib safely in a FreeRTOS project with GNU toolchain.<br>
+      <u><b>Warning:</b></u> This article discusses newlib version 2.5-3.1.
+		Later versions <b><u>may be</u></b> different...<br>
+      <br></p>
+    </header>
+    <nav>
+      <a id="NXPnote"></a>
+      <h2>Note for Users of Freescale/NXP KDS, NXP MCUXpresso, and GNU Tools for Arm Embedded</h2>
+      <p class="description">Newlib (plus newlib nano) was the only runtime library distributed in Freescale's KDS
+      development environment, and newlib version 3.1 is currently included within NXP's MCUXpresso.
+	  MCUXpresso adds NXP's proprietary redlib (formerly CodeRed), which does not drag in free storage routines like newlib.
+      As redlib does not support C++, we must use newlib for modern C++ projects.</p>
+      <p class="description">MCUXpresso v11 is based on 
+	  <a href=
+        "https://launchpad.net/gcc-arm-embedded/+announcement/15293"> 
+	  	GNU Tools for Arm Embedded Processors 8-2019-q3-update</a>, which includes newlib.
+	  If you're using this industry-standard GNU-ARM toolchain without
+      an alternate runtime library, you'll be using newlib.</p>
+    </nav>
+
+  <div id="wrapper">
+  <section id="content">
+
+    <h1>newlib requirements</h1>
+    <p class="description"><a href="https://developer.arm.com/open-source/gnu-toolchain/gnu-rm">
+	  GNU ARM Embedded Toolchain</a>
+    distributions include a non-polluting reduced-size runtime library called newlib (or newlib-nano for
+    the smallest variant). 
+	Unfortunately, newlib <u>internally</u> uses free storage (<span class="code">malloc/free</span>)
+	in startling places within the C runtime library.
+	<br>Thus, newlib free storage routines get dragged in and used unexpectedly.
+	<br>Ooops: Not MISRA-compliant, if you believe in that stuff. 
+	</p><p>
+	The most common functions that bite unsuspecting embedded developers are
+	<code>sprintf</code> using <code>%f</code>, <code>dtoa</code>, <code>ftoa</code>, <code>rand</code>, and <code>strtok</code>. 
+	<a href="https://sourceware.org/newlib/libc.html#Reentrancy">
+       Here's a list of newlib functions with reentrancy support (and hence using malloc).</a>
+	</p>
+
+	<p>
+    <b>newlib requires platform-specific support to:</b></p>
+    <ul>
+	  <li> provide thread-safety, </li>
+	  <li> switch thread contexts, and </li>
+	  <li> obtain memory to be doled out and managed
+	   by <span class="code">malloc/free/etc</span> (<code>sbrk</code>). </li>
+	</ul><p>
+	<a href="https://sourceware.org/newlib/libc.html#Stubs">
+	  Here's the detailed list of support functions required by newlib.</a>
+	<br>If this support is properly implemented, newlib works well in a threaded environment like FreeRTOS.
+
+	<span class="freescale">This support is not properly implemented for FreeRTOS projects in
+	Freescale KDS and NXP MCUXpresso until spring 2020, and in some current MCUXpresso examples.
+	<br> See: <a href="https://community.nxp.com/thread/441637">BUG: malloc
+    overruns heap, returns invalid pointer, and corrupts memory,
+	from a 1-line application printf'ing a float</a>
+	</span></p>
+
+	<p><b>Example newlib use of malloc/malloc_r:</b> <br>
+	Placing a breakpoint within malloc_r (innermost malloc routine) shows the following:
+	</p>
+    <ul>
+      <li> newlib 3.0 does <b>not</b> use <span class="code">malloc</span>
+	  before <span class="code">main() is called</span>
+	  (unlike earlier NXP/newlib 2.5 startup, which malloc'd 5k). 
+	  Verified for all four newlib variants.
+	  </li>
+	  <li> With simple decimal output, <span class="code">sprintf</span> does not call <span class="code">malloc</span> </li>
+	  <li> For <span class="code">%f</span> output, <span class="code">sprintf</span> does
+	    4 <span class="code">malloc</span> totalling ~200 bytes
+	    (only the first time it is called per task/thread). 
+		<br><span class="code">%f</span> also requires proper linker arguments for float support.
+      </li>
+	  <li> <span class="code">printf</span> or similar function expected to do IO
+	  (as opposed to string operation) allocates an IO control structure of 428 bytes. 
+	  </li>
+    </ul>
+
+	<span class="howto"><p> 
+	<b>Tip: How can I see who is calling <span class="code">malloc</span> ? </b>
+	<br>The basic steps are: </p>
+	<ul>
+	 <li> create a wrapper function <span class="code">malloc_r</span>, </li>
+	 <li> add the wrapper options to the linker, and </li>
+	 <li> place a breakpoint in <span class="code">malloc_r</span>. </li>
+	</ul><p>
+	A complete example with instructions is included in the code below.
+	</p></span>
+
+	<p><b>newlib under the hood - concurrency</b><br>
+	newlib maintains information it needs to support each separate context (thread/task/ISR)
+	in a <b>reentrancy structure</b>.
+	This includes things like a thread-specific <span class="code">errno</span>,
+	thread-specific pointers to allocated buffers, etc.
+	The active reentrancy structure is pointed at by global pointer <span class="code">_impure_ptr</span>,
+	which initially points to a statically allocated structure instance.
+	If you use no threading or tasks, and you don't use
+	 <span class="code">malloc/free/etc</span> or any of the reentrancy-dependent functions
+	in multiple execution contexts, nothing more is required to use newlib in your application
+	(newlib will maintain its required info in the single static structure).
+	If your application or any library you use requires
+	 <span class="code">malloc/free/etc</span> or any of the reentrancy-dependent functions
+	in multiple contexts, newlib requires:
+	</p><ul>
+	  <li> concurrency protection for <span class="code">malloc/free/etc</span>.
+	   The free storage pool will be corrupted if multiple threads call into these functions concurrently!
+	   To prevent reentrant execution of 
+	   <span class="code">malloc/free/etc</span> routines 
+	   <a href="https://sourceware.org/newlib/libc.html#g_t_005f_005fmalloc_005flock">
+	      newlib requires hook procedures <span class="code">__malloc_lock/unlock</span> </a>
+       If an RTOS-based application does not replace newlib's 
+	   <b>complete</b> internal <span class="code">malloc</span> family (FreeRTOS does not),
+	   <span class="code">_malloc_lock/unlock</span> must be provided for thread safety. 
+      </li>
+	  <li> multiple reentrancy structures (one per context),
+	       and a mechanism to create, initialize, and cleanup these structures, plus
+		   switching <span class="code">_impure_ptr</span> to point at the correct
+		   reentrancy structure each time the context changes. </li>
+	</ul>
+
+	<p><b>WTF? Why are newlib's dtoa, ftoa, and sprintf calling malloc???</b><br>
+	To quote Steele and White, <i>Isn't it a pain when you ask a computer
+	to divide 1.0 by 10.0 and it prints 0.0999999?</i>
+	To summarize and over-simplify a very long story,
+	in 1990 my friend Will Clinger published a seminal paper giving
+	a solution to this problem, but Will's solution required arbitrary precision and hence storage.
+	See <a href="https://dl.acm.org/doi/pdf/10.1145/989393.989430">
+	  Will's retrospective on his seminal 1990 paper and subsequent developments.</a>
+	David Gay published an improved implementation (based on Will's paper), which was extremely widely adopted.
+	newlib uses David Gay's code for dtoa and ftoa (using malloc), and sprintf uses dtoa and ftoa.
+	<a href="https://keithp.com/blog/">Keith Packard's picolibc implements the no-malloc precise Ry&#x16B; algorithm.</a>
+	There has been some recent discussion on the newlib mailing list including 
+	<a href="https://sourceware.org/pipermail/newlib/2020/017708.html">
+	  details of Gay's algorithm and maybe incorporating no-malloc Ry&#x16B; algorithm from picolibc into newlib</a>.
+	<br>Really now, aren't you sorry you asked me why?
+	</p>
+
+	<h1>FreeRTOS support for newlib</h1>
+	FreeRTOS provides support for newlib's context management.
+	In <code>FreeRTOSconfig.h</code>, add: <br>
+	<span class="code">#define configUSE_NEWLIB_REENTRANT 1 // Required for thread-safety of newlib sprintf, strtok, etc...</span><br>
+	With this option FreeRTOS does the following (in <span class="code">task.c</span>):
+	</p><ul>
+	  <li> For each task, allocate and initialize a newlib reentrancy structure in the task control block (TCB).<br>
+	       This adds 96* bytes overhead per task (* size hugely dependant on newlib build options),
+		   plus anything else newlib allocates as needed.</li>
+	  <li> Each task switch, set <span class="code">_impure_ptr</span> to point to 
+	  the newly active task's reentrancy structure.</li>
+	  <li> On task destruction, clean up the reentrancy structure (help newlib free any associated memory).</li>  
+	</ul>
+	<p><b>Careful:</b> Depending on how your supplier built newlib, and whether you are using nano,
+	<code>configUSE_NEWLIB_REENTRANT</code> can chew up considerable memory! 
+	Check carefully if this is OK for your application!
+	</p>
+
+	<p><b>FreeRTOS memory management</b><br>
+	FreeRTOS internally uses its own memory management scheme and API
+	(implemented by your choice of <span class="code">heap<i>xx</i>.c</span> routines).
+	Some FreeRTOS applications only use FreeRTOS-provided memory management.
+	Unfortunately many libraries use the standard "C" <code>malloc</code>-family routines internally,
+	including newlib itself.
+	For these cases I've implemented the FreeRTOS memory management API
+	on top of the "C" standard (using newlib) in the
+	module <span class="code">heap_useNewlib.c</span> below.
+	</p>
+
+    <h1>Using newlib safely with FreeRTOS - Possible Approaches</h1>
+    <p class="description">If you are certain your application does not use any
+	newlib functions or any library that internally use
+    the malloc-family and/or depend on thread-specific reentrant context, you could do nothing. 
+	But, are you <b><i>really</i></b> sure??? 
+	What about the libraries you use? 
+	For some hints, see this <a href="https://sourceware.org/newlib/libc.html#Reentrancy">list of newlib functions with reentrancy support</a>.
+	The only really safe way to preclude accidental use is to 
+	provide HCF stubs for every one of these functions.
+	Alternatively you can provide a linker -wrap command for each forbidden
+    function but don't implement the wrappers, so link fails if forbidden routines are ever referenced. 
+	<br><b><u>You really need to be sure!</u></b></p>
+    <p>To avoid using newlib's printf and dragging in newlib reentrancy components,
+	there are many cut-down printf implementations available (that do <u>not</u> use malloc).
+	Won't help if you're using <code>dtoa</code> or <code>strtok</code> or others!
+	Example light-weight printf implementations:
+	</p><ul>
+	    <li> <a href="https://github.com/MarioViara/xprintfc">
+           Mario Viara's light-weight printf</a> (optional floating point and reentrancy),
+		   used in <i>MCU on Eclipse Processor Expert</i>.
+		</li><li> <a href="https://github.com/mpaland/printf">
+		  mpaland printf</a> (optional floating point). </li>
+    	<li>
+    	<span class="code">printf-stdarg.c</span>
+        distributed in <a href="http://www.freertos.org/FreeRTOS-Labs/RTOS_labs_download.html">the FreeRTOS Lab TCPIP
+        example</a>; this one only uses stack storage but does not implement floating point. 
+    	</li>
+    	<li>	
+    	<a href="https://github.com/ksstech/support_common ">https://github.com/ksstech/support_common </a>.
+    	</li>
+	</ul>
+	<b><u>You must ensure you don't accidentally use any newlib facilities requiring reentrancy
+    support and/or malloc-family in multiple tasks.</u></b><p></p>
+    <p>	Another option is wrap newlib's malloc-family to use FreeRTOS free storage (ie <span class="code">heap_4.c</span>), and specify newlib support for FreeRTOS. Tell the linker to wrap all newlib's
+    malloc-family functions (using -Xlinker --wrap=malloc etc.), and provide a wrapper function that calls the FreeRTOS
+    functions. 
+	I tried that, but newlib's printf family uses realloc, which is not supported in FreeRTOS heap implementations.
+	</p>
+    <p>In the end (thanks to Richard Damon for encouraging this approach), I implemented the FreeRTOS memory API on top
+    of newlib's malloc family, and provided all the hooks newlib's malloc family requires.</p>
+
+    <h1>Using newlib safely with FreeRTOS - Recommended Solution Details</h1>
+	<p>
+	If your application needs a complete <code>malloc</code> family implementation,
+	or you are using <i>any</i> newlib functions that require malloc
+	(for example <code>printf</code> family or <code>strtok</code>), 
+	do the following
+	(I've provided an implementation below):
+	</p>
+    <ul>
+      <li>Implement the hooks required by newlib (<code>sbrk, __malloc_lock/unlock</code>).<br>
+	  Make sure your linker file matches the <code>sbrk</code> implementation! </li>
+      <li>Provide a heap implementation that implements the FreeRTOS memory API using
+	  the malloc family of newlib. </li>
+    </ul>
+	<p>
+	To use the implementation I've provided in your project:
+	</p><ul>
+      <li>
+	   Exclude from all builds any current FreeRTOS heap implementation, typically something like:
+	   <br><code>Middlewares\Third_Party\FreeRTOS\Source\portable\MemMang\heap_4.c</code>
+	  </li><li>
+	   Exclude from all builds any current sbrk implementation.
+	  </li><li>
+	   Either add the module <code>heap_useNewlib_NXP.c</code> I've provided,
+		or the version now distributed by NXP.
+	  </li><li>
+	    Make sure your LD files provide the symbols required (defining the heap boundaries and size).
+		The example LD file below show how, and also includes some helpful space-used computations,
+		accessible with a post-build-step grep DRN on the map file.
+	 </li><li>
+		If in multiple tasks your application needs a complete
+         <code>snprintf</code> implementation, <code>strtok</code>,
+         <code>dtoa></code>,
+	   or other newlib functions requiring reentrancy support, or you're not <b><i>really</i></b> sure...
+	  <br> Configure FreeRTOS for newlib support. In <code>FreeRTOSconfig.h</code>, add the line:<br>
+		<span class="code">#define configUSE_NEWLIB_REENTRANT 1</span>
+	 </li><li>
+		If are sure you're only going to access newlib's reentrant routines from a single
+		FreeRTOS task and want to skip configUSE_NEWLIB_REENTRANT (with its attendent overhead)?
+		Ensure malloc is never called except during startup and from the
+		designated single task. 
+		Verify with a check in malloc_lock (sorry, I did not provide example code).
+	</li>
+    </ul>
+
+    <p>
+		<a href="https://github.com/DRNadler/FreeRTOS_helpers">
+          Note: Latest code and further documentation is on Github</a>
+	  <button onclick="ToggleCodeVisibility()" class="showCodeBtn" id="showCodeBtn">
+	   Show Code... 
+	  </button>
+    	<script>function ToggleCodeVisibility() {
+          var x = document.getElementById('CodeDiv');
+          if (x.style.display === 'none' || x.hidden) {
+              x.style.display = 'block';
+              x.hidden = false;
+              document.getElementById('showCodeBtn').innerText  = 'Hide Code...';
+          } else {
+              x.style.display = 'none';
+              x.hidden = true;			  
+              document.getElementById('showCodeBtn').innerText  = 'Show Code...';
+          }
+      	}</script>
+		<br>
+    </p>
+
+  <div id="CodeDiv" hidden="hidden"><!-- =================================================================== -->
+	
+    <script type="syntaxhighlighter" class="brush: c" title="heap_useNewlib.c"><![CDATA[
+/**
+ * \file heap_useNewlib_NXP.c
+ * \brief Wrappers required to use newlib malloc-family within FreeRTOS.
+ *
+ * \par Overview
+ * Route FreeRTOS memory management functions to newlib's malloc family.
+ * Thus newlib and FreeRTOS share memory-management routines and memory pool,
+ * and all newlib's internal memory-management requirements are supported.
+ *
+ * \author Dave Nadler
+ * \date 22-July-2017
+ * \version 27-Jun-2020 Correct "FreeRTOS.h" capitalization, commentary
+ * \version 24-Jun-2020 commentary only
+ * \version 11-Sep-2019 malloc accounting, comments, newlib version check
+ *
+ * \see http://www.nadler.com/embedded/newlibAndFreeRTOS.html
+ * \see https://sourceware.org/newlib/libc.html#Reentrancy
+ * \see https://sourceware.org/newlib/libc.html#malloc
+ * \see https://sourceware.org/newlib/libc.html#index-_005f_005fenv_005flock
+ * \see https://sourceware.org/newlib/libc.html#index-_005f_005fmalloc_005flock
+ * \see https://sourceforge.net/p/freertos/feature-requests/72/
+ * \see http://www.billgatliff.com/newlib.html
+ * \see http://wiki.osdev.org/Porting_Newlib
+ * \see http://www.embecosm.com/appnotes/ean9/ean9-howto-newlib-1.0.html
+ *
+ *
+ * \copyright
+ * (c) Dave Nadler 2017-2020, All Rights Reserved.
+ * Web:         http://www.nadler.com
+ * email:       drn@nadler.com
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * - Use or redistributions of source code must retain the above copyright notice,
+ *   this list of conditions, and the following disclaimer.
+ *
+ * - Use or redistributions of source code must retain ALL ORIGINAL COMMENTS, AND
+ *   ANY CHANGES MUST BE DOCUMENTED, INCLUDING:
+ *   - Reason for change (purpose)
+ *   - Functional change
+ *   - Date and author contact
+ *
+ * - Redistributions in binary form must reproduce the above copyright notice, this
+ *   list of conditions and the following disclaimer in the documentation and/or
+ *   other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include <stdlib.h> // maps to newlib...
+#include <malloc.h> // mallinfo...
+#include <errno.h>  // ENOMEM
+#include <stdbool.h>
+#include <stddef.h>
+
+#include "newlib.h"
+#if ((__NEWLIB__ == 2) && (__NEWLIB_MINOR__ < 5)) ||((__NEWLIB__ == 3) && (__NEWLIB_MINOR__ > 1))
+  #warning "This wrapper was verified for newlib versions 2.5 - 3.1; please ensure newlib's external requirements for malloc-family are unchanged!"
+#endif
+
+#include "FreeRTOS.h" // defines public interface we're implementing here
+#if !defined(configUSE_NEWLIB_REENTRANT) ||  (configUSE_NEWLIB_REENTRANT!=1)
+  #warning "#define configUSE_NEWLIB_REENTRANT 1 // Required for thread-safety of newlib sprintf, dtoa, strtok, etc..."
+  // If you're *REALLY* sure you don't need FreeRTOS's newlib reentrancy support, comment out the above warning...
+#endif
+#include "task.h"
+
+// ================================================================================================
+// External routines required by newlib's malloc (sbrk/_sbrk, __malloc_lock/unlock)
+// ================================================================================================
+
+// Simplistic sbrk implementations assume stack grows downwards from top of memory,
+// and heap grows upwards starting just after BSS.
+// FreeRTOS normally allocates task stacks from a pool placed within BSS or DATA.
+// Thus within a FreeRTOS task, stack pointer is always below end of BSS.
+// When using this module, stacks are allocated from malloc pool, still always prior
+// current unused heap area...
+
+// Doesn't work with FreeRTOS: suggested minimal implementation from https://sourceware.org/newlib/libc.html#Syscalls:
+#if 0
+    // sbrk: Increase program data space. As malloc and related functions depend on this,
+    // it is useful to have a working implementation. The following suffices for a standalone system;
+    // it exploits the symbol _end automatically defined by the GNU linker.
+    caddr_t sbrk(int incr) {
+      extern char _end;     /* Defined by the linker */
+      static char *heap_end;
+      char *prev_heap_end;
+      if (heap_end == 0) {
+        heap_end = &_end;
+      }
+      prev_heap_end = heap_end;
+      if (heap_end + incr > stack_ptr) { // Fails here: always true for FreeRTOS task stacks
+        write (1, "Heap and stack collision\n", 25);
+        abort ();
+      }
+      heap_end += incr;
+      return (caddr_t) prev_heap_end;
+    }
+#endif
+// Doesn't work with FreeRTOS: Freescale implementation
+#if 0
+    caddr_t _sbrk(int incr)
+    {
+        extern char end __asm("end");
+        extern char heap_limit __asm("__HeapLimit");
+        static char *heap_end;
+        char *prev_heap_end;
+        if (heap_end == NULL)
+            heap_end = &end;
+        prev_heap_end = heap_end;
+        if (heap_end + incr > &heap_limit) // Fails here: always true for FreeRTOS task stacks
+        {
+            errno = ENOMEM; // ...so first call inside a FreeRTOS task lands here
+            return (caddr_t)-1;
+        }
+        heap_end += incr;
+        return (caddr_t)prev_heap_end;
+    }
+#endif
+
+#ifndef NDEBUG
+    static int totalBytesProvidedBySBRK = 0;
+#endif
+extern char __HeapBase, __HeapLimit, HEAP_SIZE;  // make sure to define these symbols in linker command file
+static int heapBytesRemaining = (int)&HEAP_SIZE; // that's (&__HeapLimit)-(&__HeapBase)
+
+// Use of vTaskSuspendAll() in _sbrk_r() is normally redundant, as newlib malloc family routines call
+// __malloc_lock before calling _sbrk_r(). Note vTaskSuspendAll/xTaskResumeAll support nesting.
+
+//! _sbrk_r version supporting reentrant newlib (depends upon above symbols defined by linker control file).
+void * _sbrk_r(struct _reent *pReent, int incr) {
+    static char *currentHeapEnd = &__HeapBase;
+    vTaskSuspendAll(); // Note: safe to use before FreeRTOS scheduler started, but not within an ISR
+    if (currentHeapEnd + incr > &__HeapLimit) {
+        // Ooops, no more memory available...
+        #if( configUSE_MALLOC_FAILED_HOOK == 1 )
+        {
+            extern void vApplicationMallocFailedHook( void );
+            vApplicationMallocFailedHook();
+        }
+        #elif defined(configHARD_STOP_ON_MALLOC_FAILURE)
+            // If you want to alert debugger or halt...
+            while(1) { __asm("bkpt #0"); }; // Stop in GUI as if at a breakpoint (if debugging, otherwise loop forever)
+        #else
+            // Default, if you prefer to believe your application will gracefully trap out-of-memory...
+            pReent->_errno = ENOMEM; // newlib's thread-specific errno
+            xTaskResumeAll();  // Note: safe to use before FreeRTOS scheduler started, but not within an ISR;
+        #endif
+        return (char *)-1; // the malloc-family routine that called sbrk will return 0
+    }
+    // 'incr' of memory is available: update accounting and return it.
+    char *previousHeapEnd = currentHeapEnd;
+    currentHeapEnd += incr;
+    heapBytesRemaining -= incr;
+    #ifndef NDEBUG
+        totalBytesProvidedBySBRK += incr;
+    #endif
+    xTaskResumeAll();  // Note: safe to use before FreeRTOS scheduler started, but not within an ISR
+    return (char *) previousHeapEnd;
+}
+//! non-reentrant sbrk uses is actually reentrant by using current context
+// ... because the current _reent structure is pointed to by global _impure_ptr
+char * sbrk(int incr) { return _sbrk_r(_impure_ptr, incr); }
+//! _sbrk is a synonym for sbrk.
+char * _sbrk(int incr) { return sbrk(incr); };
+
+void __malloc_lock(struct _reent *p)   { configASSERT( !xPortIsInsideInterrupt() ); // Make damn sure no mallocs inside ISRs!!
+                                               vTaskSuspendAll(); };
+void __malloc_unlock(struct _reent *p) { (void)xTaskResumeAll();  };
+
+// newlib also requires implementing locks for the application's environment memory space,
+// accessed by newlib's setenv() and getenv() functions.
+// As these are trivial functions, momentarily suspend task switching (rather than semaphore).
+// Not required (and trimmed by linker) in applications not using environment variables.
+// ToDo: Move __env_lock/unlock to a separate newlib helper file.
+void __env_lock()    {       vTaskSuspendAll(); };
+void __env_unlock()  { (void)xTaskResumeAll();  };
+
+#if 1 // Provide malloc debug and accounting wrappers
+  /// /brief  Wrap malloc/malloc_r to help debug who requests memory and why.
+  /// To use these, add linker options: -Xlinker --wrap=malloc -Xlinker --wrap=_malloc_r
+  // Note: These functions are normally unused and stripped by linker.
+  size_t TotalMallocdBytes;
+  int MallocCallCnt;
+  static bool inside_malloc;
+  void *__wrap_malloc(size_t nbytes) {
+    extern void * __real_malloc(size_t nbytes);
+    MallocCallCnt++;
+    TotalMallocdBytes += nbytes;
+    inside_malloc = true;
+      void *p = __real_malloc(nbytes); // will call malloc_r...
+    inside_malloc = false;
+    return p;
+  };
+  void *__wrap__malloc_r(void *reent, size_t nbytes) {
+    extern void * __real__malloc_r(size_t nbytes);
+    if(!inside_malloc) {
+      MallocCallCnt++;
+      TotalMallocdBytes += nbytes;
+    };
+    void *p = __real__malloc_r(nbytes);
+    return p;
+  };
+#endif
+
+// ================================================================================================
+// Implement FreeRTOS's memory API using newlib-provided malloc family.
+// ================================================================================================
+
+void *pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION {
+    void *p = malloc(xSize);
+    return p;
+}
+void vPortFree( void *pv ) PRIVILEGED_FUNCTION {
+    free(pv);
+};
+
+size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION {
+    struct mallinfo mi = mallinfo(); // available space now managed by newlib
+    return mi.fordblks + heapBytesRemaining; // plus space not yet handed to newlib by sbrk
+}
+
+// GetMinimumEverFree is not available in newlib's malloc implementation.
+// So, no implementation is provided: size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
+
+//! No implementation needed, but stub provided in case application already calls vPortInitialiseBlocks
+void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION {};
+]]></script>
+
+<script type="syntaxhighlighter" class="brush: c" title="MK64FN1M0xxx12_flash_DRN.ld"><![CDATA[
+/*
+** DRN linker control file for XXX2, non-bootload (debuggable) version - June 2017
+**
+** ###################################################################
+**     Processors:          MK64FN1M0VDC12
+**                          MK64FN1M0VLL12
+**                          MK64FN1M0VLQ12
+**                          MK64FN1M0VMD12
+**
+**     Compiler:            GNU C Compiler
+**     Reference manual:    K64P144M120SF5RM, Rev.2, January 2014
+**     Version:             rev. 2.8, 2015-02-19
+**     Build:               b151217
+**
+**     Abstract:
+**         Linker file for the GNU C Compiler
+**
+**     Copyright (c) 2015 Freescale Semiconductor, Inc.
+**     All rights reserved.
+**
+**     Redistribution and use in source and binary forms, with or without modification,
+**     are permitted provided that the following conditions are met:
+**
+**     o Redistributions of source code must retain the above copyright notice, this list
+**       of conditions and the following disclaimer.
+**
+**     o Redistributions in binary form must reproduce the above copyright notice, this
+**       list of conditions and the following disclaimer in the documentation and/or
+**       other materials provided with the distribution.
+**
+**     o Neither the name of Freescale Semiconductor, Inc. nor the names of its
+**       contributors may be used to endorse or promote products derived from this
+**       software without specific prior written permission.
+**
+**     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+**     ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+**     WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+**     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+**     ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+**     (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+**     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+**     ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+**     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+**     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+**
+**     http:                 www.freescale.com
+**     mail:                 support@freescale.com
+**
+** ###################################################################
+*/
+
+/* Entry Point */
+ENTRY(Reset_Handler)
+
+HEAP_SIZE  = DEFINED(__heap_size__)  ? __heap_size__  : 0x0400;
+STACK_SIZE = DEFINED(__stack_size__) ? __stack_size__ : 0x0400;
+M_VECTOR_RAM_SIZE = DEFINED(__ram_vector_table__) ? 0x0400 : 0x0;
+ASSERT( (HEAP_SIZE & 0xF) == 0, "HEAP_SIZE must be multiple of 16")
+ASSERT( (STACK_SIZE & 0xF) == 0, "STACK_SIZE must be multiple of 16")
+
+
+/*
+   MK64FN1xxxx12 on-chip SRAM is split into SRAM_L and SRAM_U regions,
+   where the SRAM_L and SRAM_U ranges form a contiguous block in the
+   memory map anchored at address 0x2000_0000. The two partitions are:
+   - SRAM_L is anchored to 0x1FFF_FFFF and occupies 64kb *ending* at address.
+   - SRAM_U is anchored to 0x2000_0000 and occupies 192kb *starting* at this address.
+   NOTE: Misaligned accesses across the 0x2000_0000 boundary are not
+   supported in the ARM Cortex-M4 architecture.
+   DRN: This is why memory is split into m_data and m_data_2 below.   
+*/
+
+/* Specify the memory areas */
+MEMORY
+{
+  m_interrupts          (RX)  : ORIGIN = 0x00000000, LENGTH = 0x00000400
+  m_flash_config        (RX)  : ORIGIN = 0x00000400, LENGTH = 0x00000010
+  m_text                (RX)  : ORIGIN = 0x00000410, LENGTH = 0x000FBBF0 /* was LENGTH = 0x000FFBF0 */
+  /* For XXX2 we reserve the top 16kb of flash for configuration data: x000FC000–x000FFFFF */
+  m_XXX2_config         (R)   : ORIGIN = 0x000FC000, LENGTH = 0x00004000
+  /* bss overflowed m_data until FreeRTOS heap moved to m_data_2 */
+  m_data                (RW)  : ORIGIN = 0x1FFF0000, LENGTH = 0x00010000
+  m_data_2              (RW)  : ORIGIN = 0x20000000, LENGTH = 0x00030000
+}
+
+/* Define output sections */
+SECTIONS
+{
+  /* The startup code goes first into internal flash */
+  .interrupts :
+  {
+    __VECTOR_TABLE = .;
+    . = ALIGN(4);
+    KEEP(*(.isr_vector))     /* Startup code */
+    . = ALIGN(4);
+  } > m_interrupts
+
+  .flash_config :
+  {
+    . = ALIGN(4);
+    KEEP(*(.FlashConfig))    /* Flash Configuration Field (FCF) */
+    . = ALIGN(4);
+  } > m_flash_config
+
+  /* The program code and other data goes into internal flash */
+  .text :
+  {
+    . = ALIGN(4);
+    *(.text)                 /* .text sections (code) */
+    *(.text*)                /* .text* sections (code) */
+    *(.rodata)               /* .rodata sections (constants, strings, etc.) */
+    *(.rodata*)              /* .rodata* sections (constants, strings, etc.) */
+    *(.glue_7)               /* glue arm to thumb code */
+    *(.glue_7t)              /* glue thumb to arm code */
+    *(.eh_frame)
+    KEEP (*(.init))
+    KEEP (*(.fini))
+    . = ALIGN(4);
+  } > m_text
+
+  .ARM.extab :
+  {
+    *(.ARM.extab* .gnu.linkonce.armextab.*)
+  } > m_text
+
+  .ARM :
+  {
+    __exidx_start = .;
+    *(.ARM.exidx*)
+    __exidx_end = .;
+  } > m_text
+
+ .ctors :
+  {
+    __CTOR_LIST__ = .;
+    /* gcc uses crtbegin.o to find the start of
+       the constructors, so we make sure it is
+       first.  Because this is a wildcard, it
+       doesn't matter if the user does not
+       actually link against crtbegin.o; the
+       linker won't look for a file to match a
+       wildcard.  The wildcard also means that it
+       doesn't matter which directory crtbegin.o
+       is in.  */
+    KEEP (*crtbegin.o(.ctors))
+    KEEP (*crtbegin?.o(.ctors))
+    /* We don't want to include the .ctor section from
+       from the crtend.o file until after the sorted ctors.
+       The .ctor section from the crtend file contains the
+       end of ctors marker and it must be last */
+    KEEP (*(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors))
+    KEEP (*(SORT(.ctors.*)))
+    KEEP (*(.ctors))
+    __CTOR_END__ = .;
+  } > m_text
+
+  .dtors :
+  {
+    __DTOR_LIST__ = .;
+    KEEP (*crtbegin.o(.dtors))
+    KEEP (*crtbegin?.o(.dtors))
+    KEEP (*(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors))
+    KEEP (*(SORT(.dtors.*)))
+    KEEP (*(.dtors))
+    __DTOR_END__ = .;
+  } > m_text
+
+  .preinit_array :
+  {
+    PROVIDE_HIDDEN (__preinit_array_start = .);
+    KEEP (*(.preinit_array*))
+    PROVIDE_HIDDEN (__preinit_array_end = .);
+  } > m_text
+
+  .init_array :
+  {
+    PROVIDE_HIDDEN (__init_array_start = .);
+    KEEP (*(SORT(.init_array.*)))
+    KEEP (*(.init_array*))
+    PROVIDE_HIDDEN (__init_array_end = .);
+  } > m_text
+
+  .fini_array :
+  {
+    PROVIDE_HIDDEN (__fini_array_start = .);
+    KEEP (*(SORT(.fini_array.*)))
+    KEEP (*(.fini_array*))
+    PROVIDE_HIDDEN (__fini_array_end = .);
+  } > m_text
+
+  __etext = .;    /* define a global symbol at end of code.  DRN: Marks beginning of copy of initialized data */
+  __DATA_ROM = .; /* Symbol is used by startup for data initialization.  DRN: No, while more readable symbol, actually __etext is used...*/
+
+  .interrupts_ram :
+  {
+    . = ALIGN(4);
+    __VECTOR_RAM__ = .;
+    __interrupts_ram_start__ = .; /* Create a global symbol at data start */
+    *(.m_interrupts_ram)     /* This is a user defined section */
+    . += M_VECTOR_RAM_SIZE;
+    . = ALIGN(4);
+    __interrupts_ram_end__ = .; /* Define a global symbol at data end */
+  } > m_data
+
+  __VECTOR_RAM = DEFINED(__ram_vector_table__) ? __VECTOR_RAM__ : ORIGIN(m_interrupts);
+  __RAM_VECTOR_TABLE_SIZE_BYTES = DEFINED(__ram_vector_table__) ? (__interrupts_ram_end__ - __interrupts_ram_start__) : 0x0;
+
+  .data : AT(__DATA_ROM)
+  {
+    . = ALIGN(4);
+    __DATA_RAM = .;
+    __data_start__ = .;      /* create a global symbol at data start */
+    *(.data)                 /* .data sections */
+    *(.data*)                /* .data* sections */
+    KEEP(*(.jcr*))
+    . = ALIGN(4);
+    __data_end__ = .;        /* define a global symbol at end of initialized data in RAM */
+  } > m_data
+
+  __DATA_END = __DATA_ROM + (__data_end__ - __data_start__);
+  text_end = ORIGIN(m_text) + LENGTH(m_text); /* end of portion of flash used for code (before data initialize copy) */
+  ASSERT(__DATA_END <= text_end, "region m_text overflowed with text and data")
+
+  __DRN_Unused_Flash = LENGTH(m_text) - __DATA_END;
+  __DRN_Percent_Flash_Reserved_and_Unused = ( 100 * __DRN_Unused_Flash ) / LENGTH(m_text);
+
+  __DRN_Unused_LowRam = __data_end__ - ORIGIN(m_data);
+
+  XXX2_config_flash_start  = ORIGIN(m_XXX2_config); /* DRN: define base address symbol for XXX2's reserved flash area for configuration data */
+  _XXX2_config_flash_length = LENGTH(m_XXX2_config); /* DRN: define length symbol for XXX2's reserved flash area for configuration data */
+  
+  /* Uninitialized data section */
+  .bss :
+  {
+    /* This is used by the startup in order to initialize the .bss section */
+    . = ALIGN(4);
+    __START_BSS = .;
+    __bss_start__ = .;
+    *(.bss)
+    *(.bss*)
+
+    /* consolidated USB structures DRN 0622; corrected from Freescale... */
+    . = ALIGN(512); /* This can waste a LOT of RAM, up to 511 bytes; better if BSS on boundary (or place USB stuff in separate memory)... */
+    *(m_usb_bdt)
+    *(m_usb_global)
+    /* No: . += USB_RAM_GAP; */
+
+    *(COMMON)
+    . = ALIGN(4);
+    DRN_magic_bootloader_signal_word = .; /* we don't care where this is placed for no-bootloader build */
+    . += 4;
+    __bss_end__ = .;
+    __END_BSS = .;
+    __bss_size = ABSOLUTE(. - __START_BSS);
+  } > m_data_2 /* DRN: moved to m_data_2 after BSS overflowed m_data with FFT arrays */
+
+  /* Place stack at top of block - this is the initial stack used before FreeRTOS starts (and by scheduler, ISRs) */
+  __StackTop   = ORIGIN(m_data_2) + LENGTH(m_data_2);
+  __StackLimit = __StackTop - STACK_SIZE;
+  .stack __StackLimit : /* mostly to ensure no overlapping sections... */
+  {
+    . = ALIGN(8);
+    . += STACK_SIZE;
+    __stack = .;
+  } > m_data_2
+
+  /* Place heap before initial stack. This will be used by newlib malloc-family via sbrk function */
+  __HeapBase = __StackLimit - HEAP_SIZE;
+  .heap __HeapBase :
+  {
+    . = ALIGN(8);
+    __end__ = .; /* Stunningly unhelpful name: Actually marks heap base(??), not BSS end, required only by rdimon-crt0.o (for semihosting) */
+    __HeapBaseCheck = .;
+    . += HEAP_SIZE;
+    __HeapLimit = .;
+  } > m_data_2
+  ASSERT(__HeapBase == __HeapBaseCheck, "Heap alignment error")
+
+  __DRN_Used_HighRam = (STACK_SIZE + HEAP_SIZE + __bss_size);
+  __DRN_Unused_HighRam = LENGTH(m_data_2) - __DRN_Used_HighRam;
+  /* 20170630 XXX2 debug:     0x00030000  - (0x800     0x18000 + 0x00011be4) = 5C1C (23,580 decimal bytes) */
+
+  .ARM.attributes 0 : { *(.ARM.attributes) }
+}
+]]></script>
+ 
+  </div> <!-- <div id="CodeDiv"> ====================================================================== -->
+
+  
+  <div style="wrapup">
+    <h1>Summary</h1>
+    <p>Unfortunately some vendors distribute toolchains with incorrect examples of FreeRTOS/newlib.
+	<br>However, with a bit of care newlib works well and safely with FreeRTOS.
+	<br>Enjoy!<br>Best Regards, Dave 
+	<br>
+	<br>
+	</p><p>PS: newlib provides facilities for wrapping stdio functions, not covered in this article.
+	You will want to use these, for example, if your application uses
+	posix IO functions to read and write to a USB stick using a local FAT implementation.</p>
+	<p>PS: Hope Richard Barry and the FreeRTOS team will add <code>heap_useNewlib.c</code> to FreeRTOS ;-)</p>
+    <h1>Additional References</h1>
+    <p class="description"><a href="http://www.billgatliff.com/newlib.html">http://www.billgatliff.com/newlib.html</a><br>
+    <a href="http://wiki.osdev.org/Porting_Newlib">http://wiki.osdev.org/Porting_Newlib</a><br>
+    <a href="http://www.embecosm.com/appnotes/ean9/ean9-howto-newlib-1.0.html">http://www.embecosm.com/appnotes/ean9/ean9-howto-newlib-1.0.html</a><br>
+    </p><br>
+ 
+ 
+    <footer>
+      Copyright &copy; 2017-2020 - Dave Nadler - All Rights Reserved<br>
+      Last Update 29-June-2020<br>
+      <br>
+      Contact Dave Nadler:<br>
+      voice USA East Coast +01 (978) 263-0097<br>
+      Skype Dave.Nadler1<br>
+      <a href="mailto:Dave.Nadler@Nadler.com">email Dave.Nadler@Nadler.com</a><br>
+      <a href="http://www.nadler.com">Nadler &amp; Associates Home Page</a>
+    </footer>
+  </div>
+
+
+  </section> <!-- <section id="content"> -->
+  </div> <!-- <div id="wrapper"> -->
+
+  </div> <!-- <div id="container"> -->
+</body>
+</html>

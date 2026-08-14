@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta content="Nadler: newlib and FreeRTOS" name="Description">
+  <meta content="Dave Nadler" name="author">
+  <meta content="Copyright (c) 2017-2020 Dave Nadler, all rights reserved." name="Copyright">
+  <meta content="Nadler embedded C/C++ memory allocation GNU GCC newlib FreeRTOS" name="keywords">
+  <title>newlib and FreeRTOS</title>
+  <style media="screen" type="text/css">
+        html, body, div, header, footer, aside, nav, article, section   { margin: 0; padding: 0; }
+        header, footer, aside, nav, article, section    { display: block; }
+        body            { color: #333; font: 15px Helvetica, Arial, sans-serif; line-height: 19px; }
+        h1              { padding: 10px 0 0 0/*9px*/; line-height: 23px; }
+        h2              { color: #333; line-height: 23px; }
+        a               { color: #337810; }
+        p               { margin: 13px 0 0 0/*18px*/; }
+        li              { margin:  0px 5px 0px 5px;}
+        ul              { padding: 0 18px 0 18px  /*9px*/; margin: 5px 0 0 0;}
+        ol              { padding: 0 18px 0 18px  /*9px*/; margin: 5px 0 0 0;}
+        code            { font-family: 'Source Sans Pro', Consolas, 'Lucida Sans Typewriter'; font-weight: normal; font-style: normal; text-decoration: none; }
+        #container      { width: 800px/*780px*/; margin: 0 auto; }
+
+        /* Header */
+        header          { background: #333; border-bottom: 3px solid #aaa; margin: 15px 0 15px 0;}
+        header h1       { color: #fff; margin: 10px 0 3px 0; padding: 20px 18px 0; }
+        header p        { color: #ccc; font-size: 15px; font-weight: bold; padding: 0 18px; }
+        header li       { color: #ccc; font-size: 15px; font-weight: bold; padding: 0 18px; }
+       
+        /* Content Style */
+        span.stm { background: #FFA56D; display: inline-block; padding: 3px 3px 3px 3px; }
+        span.code { font-family: 'Source Sans Pro', Consolas, 'Lucida Sans Typewriter'; font-weight: normal; font-style: normal; text-decoration: none; }
+		span.howto { background: #b4ffab; display: inline-block; padding: 3px 3px 3px 3px; }
+
+        nav     { background: #FFA56D; margin-left: 18px; }
+        nav ul  { padding: 0 18px 9px; }
+        #extra          { margin: 0 18px; }
+        #extra small    { font-size: 11px; line-height: 18px; }
+        #content        { border-bottom: 1px solid #ccc; margin: 0 18px; }
+        #content p, #extra p { padding-right: 18px; }
+        
+        /* Content Positioning and Size */
+        nav     { float: right; width: 350px; padding: 0px 18px 18px 18px }
+		/*howto   { float: right; width: 350px; padding: 0px 18px 18px 18px background: #b4ffab margin-left: 18px; }*/
+
+        #content        {  }
+        #extra          { float: left; width: 350px; }      /* Footer */
+        footer          { background: #666; border-bottom: 10px solid #fff; clear: both; padding: 18px 18px 8px 18px }
+        footer a        { color: #fff; }
+        footer p        { color: #ccc; margin: 0; padding: 0 18px 10px; }
+        footer ul       { border-bottom: 1px solid #999; list-style: none; margin: 0 18px 6px; padding: 10px 0 6px; }
+        footer li       { display: inline; font-size: 12px; font-weight: bold; padding-right: 5px; }
+		
+		.showCodeBtn {
+          font-size: 15px;
+          font-weight: bold;
+          display: inline-block;
+		  border: 0.4em solid #060729;
+		  border-radius: 15%;
+       /*   margin: 0 auto;
+          color: #dcfbb4;
+          background-color: green;
+          
+          border-radius: 50%;
+          transition: all 0.3s;
+        */  box-sizing: border-box;
+        /*  width: 50px;
+          height: 12px; */
+          cursor: pointer;
+          box-shadow: 0 0 0 rgba(0,0,0,0.1), inset 0 0 0 rgba(0,0,0,0.1);
+          text-align: center;
+      }
+
+  </style><!--[if IE]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  <!--  syntaxHighliter sourced from AlexGorbatchev.com  -->
+  <link href="syntaxhighlighter_3.0.83/styles/shCore.css" rel="stylesheet" type="text/css">
+<!--   <link href="syntaxhighlighter_3.0.83/styles/shThemeRDark.css" rel="stylesheet" type="text/css">  -->
+  <link href="syntaxhighlighter_3.0.83/styles/shThemeDefault.css" rel="stylesheet" type="text/css">
+<!--  <script src="syntaxhighlighter_3.0.83/src/XRegExp.js" type="text/javascript"> </script> <!-- XRegExp was bundled with the final shCore.js during build -->
+<!--  <script src="syntaxhighlighter_3.0.83/src/shCore.js" type="text/javascript"> </script>     Uncompiled version -->
+  <script src="syntaxhighlighter_3.0.83/scripts/shCore.js" type="text/javascript"> </script> <!-- Compiled version -->
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushCpp.js" type="text/javascript"> </script>
+<!--
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushCss.js" type="text/javascript"> </script>
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushJava.js" type="text/javascript"> </script>
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushJScript.js" type="text/javascript"> </script>
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushPhp.js" type="text/javascript"> </script>
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushSql.js" type="text/javascript"> </script>
+  <script src="syntaxhighlighter_3.0.83/scripts/shBrushVb.js" type="text/javascript"> </script>
+-->
+
+  <script language="javascript">
+    <!--   window.confirm("SH initialization JS started..."); -->
+    SyntaxHighlighter.config.bloggerMode = false;
+    SyntaxHighlighter.defaults.wrap_lines = false;
+    // skip, CVE... SyntaxHighlighter.config.clipboardSwf = 'sh/clipboard.swf';
+    SyntaxHighlighter.all();
+    <!--   window.confirm("SH initialization JS executed"); -->
+   </script>
+</head>
+<body>
+  <div id="container">
+    <header>
+	  <p><br>
+	  June-2020 version for
+	  STM's STM32CubeIDE toolchain (newlib 3.0).<br>
+      <a href="http://www.nadler.com/embedded/NXP_newlibAndFreeRTOS.html">
+	    See 2020 version for NXP MCUXpresso with newlib 2.5-3.1 </a>
+      </p>
+      <h1>Background</h1>
+      <p class="description">For reliability, smaller embedded systems typically don't use dynamic memory, thus
+      avoiding associated problems of leakage, fragmentation, and resulting out-of-memory crashes. In Nadler &amp;
+      Associates smaller embedded projects (and large avionics products), we've historically used <b><i>no</i></b> runtime dynamic memory.</p>
+      <p>Some tool chains (and especially some features of C++, the topic of a separate article) <b>require dynamic memory
+      internally, even if your application uses no free storage calls</b>.
+	  The newlib C-runtime library (used in many embedded tool chains) 
+	  internally uses it's own malloc-family routines. 
+	  newlib maintains some internal buffers and requires some support for thread-safety.
+	  </p>
+      <p>This article explains how to use newlib safely in a FreeRTOS project with GNU toolchain.<br>
+      <u><b>Warning:</b></u> This article discusses newlib version 3.0.
+		Later versions <b><u>may be</u></b> different...<br>
+      <br></p>
+    </header>
+    <nav>
+      <a id="CubeUserNote"></a>
+      <h2>STM CubeMX Users - Beware</h2>
+      <p class="description">
+	  Newlib 3.0 is the only runtime library distributed in STM's STM32CubeIDE development environment.
+	  You can select <i>standard</i> or <i>reduced</i> for each of C and C++ (4 possible combinations).
+	  As of July-2019 (and still in June 2020! Unbelievable!),
+	  <b>Cube-generated projects using FreeRTOS</b> do not properly support 
+	  <span class="code">malloc/free/etc</span> and family, nor general newlib RTL reentrancy.
+	  <b> Your application will corrupt memory if it calls <span class="code">malloc/free/etc</span>:</b>
+	  </p>
+	  <ul>
+ 	   <li> <b> directly </b></li>
+ 	   <li> <b> via a newlib C-RTL function called by your application (for example <span class="code">sprintf %f</span>), or </b></li>
+	   <li> <b> via STM-provided HAL-LL code (for example STM's USB stack) </b></li>
+	  </ul>
+	  <p>
+	  This document explains how to fix this (follow the instructions at the bottom of this page).
+	  </p>	  
+    </nav>
+
+  <div id="wrapper">
+  <section id="content">
+
+    <h1>newlib requirements</h1>
+    <p class="description"><a href="https://developer.arm.com/open-source/gnu-toolchain/gnu-rm">
+    GNU ARM Embedded Toolchain</a>
+    distributions include a non-polluting reduced-size runtime library called newlib (or newlib-nano for
+    the smallest variant). 
+	Unfortunately, newlib <u>internally</u> uses free storage (<span class="code">malloc/free</span>)
+	in startling places within the C runtime library.
+	<br>Thus, newlib free storage routines get dragged in and used unexpectedly.
+	<br>Ooops: Not MISRA-compliant, if you believe in that stuff. 
+	</p><p>
+	The most common functions that bite unsuspecting embedded developers are
+	<code>sprintf</code> using <code>%f</code>, <code>dtoa</code>, <code>ftoa</code>, <code>rand</code>, and <code>strtok</code>. 
+	<a href="https://sourceware.org/newlib/libc.html#Reentrancy">
+       Here's a list of newlib functions with reentrancy support (and hence using malloc).</a>
+	</p>
+
+	<p>
+    <b>newlib requires platform-specific support to:</b></p>
+	<ul>
+	  <li> provide thread-safety, </li>
+	  <li> switch thread contexts, and </li>
+	  <li> obtain memory to be doled out and managed
+	   by <span class="code">malloc/free/etc</span> (<code>sbrk</code>). </li>
+	</ul><p>
+	<a href="https://sourceware.org/newlib/libc.html#Stubs">
+	  Here's the detailed list of support functions required by newlib.</a>
+	<br>If this support is properly implemented, newlib works well in a threaded environment like FreeRTOS.
+
+	<span class="stm">CubeMX does not properly set up these support functions for a FreeRTOS project.
+	<br> See: <a href="https://community.st.com/s/question/0D50X0000BB1eL7SQJ/bug-cubemx-freertos-projects-corrupt-memory">
+	 Bug Report to STM regarding CubeMX FreeRTOS projects</a> and the STM bug discussion below.
+	</span></p>
+
+	<p><b>Example newlib use of malloc/malloc_r:</b> <br>
+	Placing a breakpoint within malloc_r (innermost malloc routine) shows the following:
+	</p>
+    <ul>
+      <li> newlib 3.0 does <b>not</b> use <span class="code">malloc</span>
+	  before <span class="code">main() is called</span>
+	  (unlike earlier NXP/newlib 2.5 startup, which malloc'd 5k). 
+	  Verified for all four newlib variants.
+	  </li>
+	  <li> With simple decimal output, <span class="code">sprintf</span> does not call <span class="code">malloc</span> </li>
+	  <li> For <span class="code">%f</span> output, <span class="code">sprintf</span> does
+	    4 <span class="code">malloc</span> totalling ~200 bytes
+	    (only the first time it is called per task/thread). 
+		<br><span class="code">%f</span> also requires proper linker arguments for float support.
+      </li>
+	  <li> <span class="code">printf</span> or similar function expected to do IO
+	  (as opposed to string operation) allocates an IO control structure of 428 bytes. 
+	  </li>
+    </ul>
+
+	<span class="howto"><p> 
+	<b>Tip: How can I see who is calling <span class="code">malloc</span> ? </b>
+	<br>The basic steps are: </p>
+	<ul>
+	 <li> create a wrapper function <span class="code">malloc_r</span>, </li>
+	 <li> add the wrapper options to the linker, and </li>
+	 <li> place a breakpoint in <span class="code">malloc_r</span>. </li>
+	</ul><p>
+	A complete example with instructions is included in the code below.
+	</p></span>
+
+	<p><b>newlib under the hood - concurrency</b><br>
+	newlib maintains information it needs to support each separate context (thread/task/ISR)
+	in a <b>reentrancy structure</b>.
+	This includes things like a thread-specific <span class="code">errno</span>,
+	thread-specific pointers to allocated buffers, etc.
+	The active reentrancy structure is pointed at by global pointer <span class="code">_impure_ptr</span>,
+	which initially points to a statically allocated structure instance.
+	If you use no threading or tasks, and you don't use
+	 <span class="code">malloc/free/etc</span> or any of the reentrancy-dependent functions
+	in multiple execution contexts, nothing more is required to use newlib in your application
+	(newlib will maintain its required info in the single static structure).
+	If your application or any library you use requires
+	 <span class="code">malloc/free/etc</span> or any of the reentrancy-dependent functions
+	in multiple contexts, newlib requires:
+	</p><ul>
+	  <li> concurrency protection for <span class="code">malloc/free/etc</span>.
+	   The free storage pool will be corrupted if multiple threads call into these functions concurrently!
+	   To prevent reentrant execution of 
+	   <span class="code">malloc/free/etc</span> routines 
+	   <a href="https://sourceware.org/newlib/libc.html#g_t_005f_005fmalloc_005flock">
+	      newlib requires hook procedures <span class="code">__malloc_lock/unlock</span> </a>
+       If an RTOS-based application does not replace newlib's 
+	   <b>complete</b> internal <span class="code">malloc</span> family (FreeRTOS does not),
+	   <span class="code">_malloc_lock/unlock</span> must be provided for thread safety. 
+      </li>
+	  <li> multiple reentrancy structures (one per context),
+	       and a mechanism to create, initialize, and cleanup these structures, plus
+		   switching <span class="code">_impure_ptr</span> to point at the correct
+		   reentrancy structure each time the context changes. </li>
+	</ul>
+
+	<p><b>WTF? Why are newlib's dtoa, ftoa, and sprintf calling malloc???</b><br>
+	To quote Steele and White, <i>Isn't it a pain when you ask a computer
+	to divide 1.0 by 10.0 and it prints 0.0999999?</i>
+	To summarize and over-simplify a very long story,
+	in 1990 my friend Will Clinger published a seminal paper giving
+	a solution to this problem, but Will's solution required arbitrary precision and hence storage.
+	See <a href="https://dl.acm.org/doi/pdf/10.1145/989393.989430">
+	  Will's retrospective on his seminal 1990 paper and subsequent developments.</a>
+	David Gay published an improved implementation (based on Will's paper), which was extremely widely adopted.
+	newlib uses David Gay's code for dtoa and ftoa (using malloc), and sprintf uses dtoa and ftoa.
+	<a href="https://keithp.com/blog/">Keith Packard's picolibc implements the no-malloc precise Ry&#x16B; algorithm.</a>
+	There has been some recent discussion on the newlib mailing list including 
+	<a href="https://sourceware.org/pipermail/newlib/2020/017708.html">
+	  details of Gay's algorithm and maybe incorporating no-malloc Ry&#x16B; algorithm from picolibc into newlib</a>.
+	<br>Really now, aren't you sorry you asked me why?
+	</p>
+
+	<h1>FreeRTOS support for newlib</h1>
+	FreeRTOS provides support for newlib's context management.
+	In <code>FreeRTOSconfig.h</code>, add: <br>
+	<span class="code">#define configUSE_NEWLIB_REENTRANT 1 // Required for thread-safety of newlib sprintf, strtok, etc...</span><br>
+	With this option FreeRTOS does the following (in <span class="code">task.c</span>):
+	</p><ul>
+	  <li> For each task, allocate and initialize a newlib reentrancy structure in the task control block (TCB).<br>
+	       This adds 96* bytes overhead per task (* size hugely dependant on newlib build options),
+		   plus anything else newlib allocates as needed.</li>
+	  <li> Each task switch, set <span class="code">_impure_ptr</span> to point to 
+	  the newly active task's reentrancy structure.</li>
+	  <li> On task destruction, clean up the reentrancy structure (help newlib free any associated memory).</li>  
+	</ul>
+	<p><b>Careful:</b> Depending on how your supplier built newlib, and whether you are using nano,
+	<code>configUSE_NEWLIB_REENTRANT</code> can chew up considerable memory! 
+	Check carefully if this is OK for your application!
+	</p>
+
+	<p><b>FreeRTOS memory management</b><br>
+	FreeRTOS internally uses its own memory management scheme and API
+	(implemented by your choice of <span class="code">heap<i>xx</i>.c</span> routines).
+	Some FreeRTOS applications only use FreeRTOS-provided memory management.
+	Unfortunately many libraries use the standard "C" <code>malloc</code>-family routines internally,
+	including newlib itself
+	<span class="stm">(for example STM's USB stack LL and HAL routines)</span>.
+	For these cases I've implemented the FreeRTOS memory management API
+	on top of the "C" standard (using newlib) in the
+	module <span class="code">heap_useNewlib.c</span> below.
+	</p>
+
+    <span class="stm"><p><b>Bugs in projects generated by STM's CubeMX</b><br>
+	Note as of spring 2020: ST has attempted to solve some of problems discussed below,
+	but rather than just redistributing heap_useNewlib (as NXP and others have done),
+	ST has tried to redo the implementation - and failed to do it correctly!
+	Best you delete their unfortunate failed attempts and use proven working code provided here.
+	</p><p>
+	From earlier versions:
+	There are a number of problems in projects generated with STM's CubeMX tool,
+	which lead to memory corruption and other unfortunate happenings:
+	</p><ol>
+	 <li> STM does not provide <span class="code">__malloc_lock/unlock</span>.
+	  Hence memory management is not thread-safe. <br>
+	 </li><li>
+	  <b><i>In a stunning bit of coding malpractice, STM's USB stack calls <code>malloc</code>
+	  from within an ISR</i></b> (see for example function <code>USBD_CDC_Init</code>).
+	  Normally thread-safety is provided by suspending task-switching during memory management.
+	  Because of this incompetent use of <code>malloc</code> inside an ISR, 
+	  interrupts need to be suspended during memory management.
+	  Unfortunately this can greatly increase interrupt latency.
+	  <br><i>ToDo: Verify priority set by <code>taskENTER_CRITICAL_FROM_ISR</code> actually blocks USB interrupt.</i>
+	 </li><li>
+	  newlib's free storage requires an external implementation of <span class="code">sbrk</span>
+	  to provide the heap storage then doled out by the malloc-family 
+      (see <a href="https://sourceware.org/newlib/libc.html#index-sbrk">
+	    newlib <span class="code">sbrk</span> requirements</a>).
+	  <br><b>The <code>sbrk</code> implementation provided by STM <u>cannot</u> work with FreeRTOS.
+	  <br>Any <code>malloc</code> request after the scheduler starts will fail. </b>
+	 </li><li>
+	  STM did not enable (in <code>FreeRTOSconfig.h</code>): <br>
+	   <span class="code">#define configUSE_NEWLIB_REENTRANT 1 // Required for thread-safety of newlib sprintf, strtok, etc...</span>
+     </li>
+    </ol>
+	</span><p></p>
+
+    <h1>Using newlib safely with FreeRTOS - Possible Approaches</h1>
+    <p class="description">If you are certain your application does not use any
+	newlib functions or any library that internally use
+    the malloc-family and/or depend on thread-specific reentrant context, you could do nothing. 
+	But, are you <b><i>really</i></b> sure??? 
+	What about the libraries you use<span class="stm"> (for example STM's USB stack LL and HAL routines)</span>? 
+	For some hints, see this <a href="https://sourceware.org/newlib/libc.html#Reentrancy">list of newlib functions with reentrancy support</a>.
+	The only really safe way to preclude accidental use is to 
+	provide HCF stubs for every one of these functions.
+	Alternatively you can provide a linker -wrap command for each forbidden
+    function but don't implement the wrappers, so link fails if forbidden routines are ever referenced. 
+	<br><b><u>You really need to be sure!</u></b></p>
+    <p>To avoid using newlib's printf and dragging in newlib reentrancy components,
+	there are many cut-down printf implementations available (that do <u>not</u> use malloc).
+	Won't help if you're using <code>dtoa</code> or <code>strtok</code> or others!
+	Example light-weight printf implementations:
+	</p><ul>
+	    <li> <a href="https://github.com/MarioViara/xprintfc">
+           Mario Viara's light-weight printf</a> (optional floating point and reentrancy),
+		   used in <i>MCU on Eclipse Processor Expert</i>.
+		</li><li> <a href="https://github.com/mpaland/printf">
+		  mpaland printf</a> (optional floating point). </li>
+    	<li>
+    	<span class="code">printf-stdarg.c</span>
+        distributed in <a href="http://www.freertos.org/FreeRTOS-Labs/RTOS_labs_download.html">the FreeRTOS Lab TCPIP
+        example</a>; this one only uses stack storage but does not implement floating point. 
+    	</li>
+    	<li>	
+    	<a href="https://github.com/ksstech/support_common">https://github.com/ksstech/support_common </a>.
+    	</li>
+	</ul>
+	<b><u>You must ensure you don't accidentally use any newlib facilities requiring reentrancy
+    support and/or malloc-family in multiple tasks.</u></b><p></p>
+    <p>	Another option is wrap newlib's malloc-family to use FreeRTOS free storage (ie <span class="code">heap_4.c</span>), and specify newlib support for FreeRTOS. Tell the linker to wrap all newlib's
+    malloc-family functions (using -Xlinker --wrap=malloc etc.), and provide a wrapper function that calls the FreeRTOS
+    functions. 
+	I tried that, but newlib's printf family uses realloc, which is not supported in FreeRTOS heap implementations.
+	</p>
+    <p>In the end (thanks to Richard Damon for encouraging this approach), I implemented the FreeRTOS memory API on top
+    of newlib's malloc family, and provided all the hooks newlib's malloc family requires.</p>
+
+    <h1>Using newlib safely with FreeRTOS - Recommended Solution Details</h1>
+	<p>
+	If your application needs a complete <code>malloc</code> family implementation,
+	or you are using <i>any</i> newlib functions that require malloc
+	(for example <code>printf</code> family or <code>strtok</code>), 
+	do the following
+	(I've provided an implementation below):
+	</p>
+    <ul>
+      <li>Implement the hooks required by newlib (<code>sbrk, __malloc_lock/unlock</code>).<br>
+	  Make sure your linker file matches the <code>sbrk</code> implementation! </li>
+      <li>Provide a heap implementation that implements the FreeRTOS memory API using
+	  the malloc family of newlib. </li>
+    </ul>
+	<p>
+	To use the implementation I've provided in your project:
+	</p><ul>
+      <li>
+	   Exclude from all builds any current FreeRTOS heap implementation, typically something like:
+	   <br><code>Middlewares\Third_Party\FreeRTOS\Source\portable\MemMang\heap_4.c</code>
+	  </li><li>
+	   Exclude from all builds any current sbrk implementation.
+       In older versions of RubeMX, ST generated a stand-alone sbrk.c module.
+       Later versions hide it in <code>syscalls.c</code> to obfuscate their messes.
+	   Get rid of it!
+	  </li><li>
+	   Add the module <code>heap_useNewlib_ST.c</code> I've provided.
+	 </li><li>
+		If in multiple tasks your application needs a complete
+		<code>snprintf</code> implementation, <code>strtok</code>,
+		<code>dtoa></code>,
+		or other newlib functions requiring reentrancy support, or you're not <b><i>really</i></b> sure...
+		<br> Configure FreeRTOS for newlib support. In <code>FreeRTOSconfig.h</code>, add the line:<br>
+		<span class="code">#define configUSE_NEWLIB_REENTRANT 1</span>
+		<br>In RubeMX FreeRTOS options, select configUSE_NEWLIB_REENTRANT + deselect "FW pack heap file".
+	 </li><li>
+		If are sure you're only going to access newlib's reentrant routines from a single
+		FreeRTOS task and want to skip configUSE_NEWLIB_REENTRANT (with its attendent overhead)?
+		Ensure malloc is never called except during startup and from the
+		designated single task. 
+		Verify with a check in malloc_lock (sorry, I did not provide example code).
+	</li>
+	</ul>
+
+    <p>
+		<a href="https://github.com/DRNadler/FreeRTOS_helpers">
+          Note: Latest code and further documentation is on Github</a>
+	  <button onclick="ToggleCodeVisibility()" class="showCodeBtn" id="showCodeBtn">
+	   Show Code... 
+	  </button>
+    	<script>function ToggleCodeVisibility() {
+          var x = document.getElementById('CodeDiv');
+          if (x.style.display === 'none' || x.hidden) {
+              x.style.display = 'block';
+              x.hidden = false;
+              document.getElementById('showCodeBtn').innerText  = 'Hide Code...';
+          } else {
+              x.style.display = 'none';
+              x.hidden = true;			  
+              document.getElementById('showCodeBtn').innerText  = 'Show Code...';
+          }
+      	}</script>
+		<br>
+    </p>
+
+  <div id="CodeDiv" hidden="hidden"><!-- =================================================================== -->
+	
+    <script type="syntaxhighlighter" class="brush: c" title="heap_useNewlib.c"><![CDATA[
+/**
+ * \file heap_useNewlib_ST.c
+ * \brief Wrappers required to use newlib malloc-family within FreeRTOS.
+ *
+ * \par Overview
+ * Route FreeRTOS memory management functions to newlib's malloc family.
+ * Thus newlib and FreeRTOS share memory-management routines and memory pool,
+ * and all newlib's internal memory-management requirements are supported.
+ *
+ * \author Dave Nadler
+ * \date 20-August-2019
+ * \version 27-Jun-2020 Correct "FreeRTOS.h" capitalization, commentary
+ * \version 24-Jun-2020 commentary only
+ * \version 11-Sep-2019 malloc accounting, comments, newlib version check
+ *
+ * \see http://www.nadler.com/embedded/newlibAndFreeRTOS.html
+ * \see https://sourceware.org/newlib/libc.html#Reentrancy
+ * \see https://sourceware.org/newlib/libc.html#malloc
+ * \see https://sourceware.org/newlib/libc.html#index-_005f_005fenv_005flock
+ * \see https://sourceware.org/newlib/libc.html#index-_005f_005fmalloc_005flock
+ * \see https://sourceforge.net/p/freertos/feature-requests/72/
+ * \see http://www.billgatliff.com/newlib.html
+ * \see http://wiki.osdev.org/Porting_Newlib
+ * \see http://www.embecosm.com/appnotes/ean9/ean9-howto-newlib-1.0.html
+ *
+ *
+ * \copyright
+ * (c) Dave Nadler 2017-2020, All Rights Reserved.
+ * Web:         http://www.nadler.com
+ * email:       drn@nadler.com
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * - Use or redistributions of source code must retain the above copyright notice,
+ *   this list of conditions, and the following disclaimer.
+ *
+ * - Use or redistributions of source code must retain ALL ORIGINAL COMMENTS, AND
+ *   ANY CHANGES MUST BE DOCUMENTED, INCLUDING:
+ *   - Reason for change (purpose)
+ *   - Functional change
+ *   - Date and author contact
+ *
+ * - Redistributions in binary form must reproduce the above copyright notice, this
+ *   list of conditions and the following disclaimer in the documentation and/or
+ *   other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// ================================================================================================
+// =======================================  Configuration  ========================================
+// These configuration symbols could be provided by from build...
+#define STM_VERSION // Replace sane LD symbols with STM CubeMX's poor standard exported LD symbols
+#define ISR_STACK_LENGTH_BYTES (configISR_STACK_SIZE_WORDS*4) // bytes to reserve for ISR (MSP) stack
+// =======================================  Configuration  ========================================
+// ================================================================================================
+
+
+#include <stdlib.h> // maps to newlib...
+#include <malloc.h> // mallinfo...
+#include <errno.h>  // ENOMEM
+#include <stdbool.h>
+#include <stddef.h>
+
+#include "newlib.h"
+#if ((__NEWLIB__ == 2) && (__NEWLIB_MINOR__ < 5)) ||((__NEWLIB__ == 3) && (__NEWLIB_MINOR__ > 1))
+  #warning "This wrapper was verified for newlib versions 2.5 - 3.1; please ensure newlib's external requirements for malloc-family are unchanged!"
+#endif
+
+#include "FreeRTOS.h" // defines public interface we're implementing here
+#if !defined(configUSE_NEWLIB_REENTRANT) ||  (configUSE_NEWLIB_REENTRANT!=1)
+  #warning "#define configUSE_NEWLIB_REENTRANT 1 // Required for thread-safety of newlib sprintf, dtoa, strtok, etc..."
+  // If you're *REALLY* sure you don't need FreeRTOS's newlib reentrancy support, comment out the above warning...
+#endif
+#include "task.h"
+
+// ================================================================================================
+// External routines required by newlib's malloc (sbrk/_sbrk, __malloc_lock/unlock)
+// ================================================================================================
+
+// Simplistic sbrk implementations assume stack grows downwards from top of memory,
+// and heap grows upwards starting just after BSS.
+// FreeRTOS normally allocates task stacks from a pool placed within BSS or DATA.
+// Thus within a FreeRTOS task, stack pointer is always below end of BSS.
+// When using this module, stacks are allocated from malloc pool, still always prior
+// current unused heap area...
+
+// Doesn't work with FreeRTOS: STM CubeMX 2018-2019 Incorrect Implementation
+#if 0
+    caddr_t _sbrk(int incr)
+    {
+        extern char end asm("end"); // From linker: lowest unused RAM address, just beyond end of BSS.
+        static char *heap_end;
+        char *prev_heap_end;
+        if (heap_end == 0) heap_end = &end;
+        prev_heap_end = heap_end;
+        if (heap_end + incr > stack_ptr) // Fails here:  always true for FreeRTOS task stacks
+        {
+            errno = ENOMEM; // ...so first call inside a FreeRTOS task lands here
+            return (caddr_t) -1;
+        }
+        heap_end += incr;
+        return (caddr_t) prev_heap_end;
+    }
+#endif
+
+register char * stack_ptr asm("sp");
+
+#ifdef STM_VERSION // Use STM CubeMX LD symbols for heap+stack area
+    // To avoid modifying STM LD file (and then having CubeMX trash it), use available STM symbols
+    // Unfortunately STM does not provide standardized markers for RAM suitable for heap!
+    // STM CubeMX-generated LD files provide the following symbols:
+    //    end     /* aligned first word beyond BSS */
+    //    _estack /* one word beyond end of "RAM" Ram type memory, for STM32F429 0x20030000 */
+    // Kludge below uses CubeMX-generated symbols instead of sane LD definitions
+    #define __HeapBase  end
+    #define __HeapLimit _estack // In K64F LD this is already adjusted for ISR stack space...
+    static int heapBytesRemaining;
+    // no DRN HEAP_SIZE symbol from LD... // that's (&__HeapLimit)-(&__HeapBase)
+    uint32_t TotalHeapSize; // publish for diagnostic routines; filled in first _sbrk call.
+#else
+    // Note: DRN's K64F LD provided: __StackTop (byte beyond end of memory), __StackLimit, HEAP_SIZE, STACK_SIZE
+    // __HeapLimit was already adjusted to be below reserved stack area.
+    extern char HEAP_SIZE;  // make sure to define this symbol in linker LD command file
+    static int heapBytesRemaining = (int)&HEAP_SIZE; // that's (&__HeapLimit)-(&__HeapBase)
+#endif
+
+
+#ifdef MALLOCS_INSIDE_ISRs // STM code to avoid malloc within ISR (USB CDC stack)
+    // We can't use vTaskSuspendAll() within an ISR.
+    // STM's stunningly bad coding malpractice calls malloc within ISRs (for example, on USB connect function USBD_CDC_Init)
+    // So, we must just suspend/resume interrupts, lengthening max interrupt response time, aarrggg...
+    #define DRN_ENTER_CRITICAL_SECTION(_usis) { _usis = taskENTER_CRITICAL_FROM_ISR(); } // Disables interrupts (after saving prior state)
+    #define DRN_EXIT_CRITICAL_SECTION(_usis)  { taskEXIT_CRITICAL_FROM_ISR(_usis);     } // Re-enables interrupts (unless already disabled prior taskENTER_CRITICAL)
+#else
+    #define DRN_ENTER_CRITICAL_SECTION(_usis) vTaskSuspendAll(); // Note: safe to use before FreeRTOS scheduler started, but not in ISR
+    #define DRN_EXIT_CRITICAL_SECTION(_usis)  xTaskResumeAll();  // Note: safe to use before FreeRTOS scheduler started, but not in ISR
+#endif
+
+#ifndef NDEBUG
+    static int totalBytesProvidedBySBRK = 0;
+#endif
+extern char __HeapBase, __HeapLimit;  // symbols from linker LD command file
+
+// Use of vTaskSuspendAll() in _sbrk_r() is normally redundant, as newlib malloc family routines call
+// __malloc_lock before calling _sbrk_r(). Note vTaskSuspendAll/xTaskResumeAll support nesting.
+
+//! _sbrk_r version supporting reentrant newlib (depends upon above symbols defined by linker control file).
+void * _sbrk_r(struct _reent *pReent, int incr) {
+    #ifdef MALLOCS_INSIDE_ISRs // block interrupts during free-storage use
+      UBaseType_t usis; // saved interrupt status
+    #endif
+    static char *currentHeapEnd = &__HeapBase;
+    #ifdef STM_VERSION // Use STM CubeMX LD symbols for heap
+      if(TotalHeapSize==0) {
+        TotalHeapSize = heapBytesRemaining = (int)((&__HeapLimit)-(&__HeapBase))-ISR_STACK_LENGTH_BYTES;
+      };
+    #endif
+    char* limit = (xTaskGetSchedulerState()==taskSCHEDULER_NOT_STARTED) ?
+            stack_ptr   :  // Before scheduler is started, limit is stack pointer (risky!)
+            &__HeapLimit-ISR_STACK_LENGTH_BYTES;  // Once running, OK to reuse all remaining RAM except ISR stack (MSP) stack
+    DRN_ENTER_CRITICAL_SECTION(usis);
+    if (currentHeapEnd + incr > limit) {
+        // Ooops, no more memory available...
+        #if( configUSE_MALLOC_FAILED_HOOK == 1 )
+          {
+            extern void vApplicationMallocFailedHook( void );
+            DRN_EXIT_CRITICAL_SECTION(usis);
+            vApplicationMallocFailedHook();
+          }
+        #elif defined(configHARD_STOP_ON_MALLOC_FAILURE)
+            // If you want to alert debugger or halt...
+            // WARNING: brkpt instruction may prevent watchdog operation...
+            while(1) { __asm("bkpt #0"); }; // Stop in GUI as if at a breakpoint (if debugging, otherwise loop forever)
+        #else
+            // Default, if you prefer to believe your application will gracefully trap out-of-memory...
+            pReent->_errno = ENOMEM; // newlib's thread-specific errno
+            DRN_EXIT_CRITICAL_SECTION(usis);
+        #endif
+        return (char *)-1; // the malloc-family routine that called sbrk will return 0
+    }
+    // 'incr' of memory is available: update accounting and return it.
+    char *previousHeapEnd = currentHeapEnd;
+    currentHeapEnd += incr;
+    heapBytesRemaining -= incr;
+    #ifndef NDEBUG
+        totalBytesProvidedBySBRK += incr;
+    #endif
+    DRN_EXIT_CRITICAL_SECTION(usis);
+    return (char *) previousHeapEnd;
+}
+//! non-reentrant sbrk uses is actually reentrant by using current context
+// ... because the current _reent structure is pointed to by global _impure_ptr
+char * sbrk(int incr) { return _sbrk_r(_impure_ptr, incr); }
+//! _sbrk is a synonym for sbrk.
+char * _sbrk(int incr) { return sbrk(incr); };
+
+#ifdef MALLOCS_INSIDE_ISRs // block interrupts during free-storage use
+  static UBaseType_t malLock_uxSavedInterruptStatus;
+#endif
+void __malloc_lock(struct _reent *r)   {
+  #if defined(MALLOCS_INSIDE_ISRs)
+    DRN_ENTER_CRITICAL_SECTION(malLock_uxSavedInterruptStatus);
+  #else
+    bool insideAnISR = xPortIsInsideInterrupt();
+    configASSERT( !insideAnISR ); // Make damn sure no more mallocs inside ISRs!!
+  vTaskSuspendAll();
+  #endif
+};
+void __malloc_unlock(struct _reent *r) {
+  #if defined(MALLOCS_INSIDE_ISRs)
+    DRN_EXIT_CRITICAL_SECTION(malLock_uxSavedInterruptStatus);
+  #else
+  (void)xTaskResumeAll();
+  #endif
+};
+
+// newlib also requires implementing locks for the application's environment memory space,
+// accessed by newlib's setenv() and getenv() functions.
+// As these are trivial functions, momentarily suspend task switching (rather than semaphore).
+// Not required (and trimmed by linker) in applications not using environment variables.
+// ToDo: Move __env_lock/unlock to a separate newlib helper file.
+void __env_lock()    {       vTaskSuspendAll(); };
+void __env_unlock()  { (void)xTaskResumeAll();  };
+
+#if 1 // Provide malloc debug and accounting wrappers
+  /// /brief  Wrap malloc/malloc_r to help debug who requests memory and why.
+  /// To use these, add linker options: -Xlinker --wrap=malloc -Xlinker --wrap=_malloc_r
+  // Note: These functions are normally unused and stripped by linker.
+  size_t TotalMallocdBytes;
+  int MallocCallCnt;
+  static bool inside_malloc;
+  void *__wrap_malloc(size_t nbytes) {
+    extern void * __real_malloc(size_t nbytes);
+    MallocCallCnt++;
+    TotalMallocdBytes += nbytes;
+    inside_malloc = true;
+      void *p = __real_malloc(nbytes); // will call malloc_r...
+    inside_malloc = false;
+    return p;
+  };
+  void *__wrap__malloc_r(void *reent, size_t nbytes) {
+    extern void * __real__malloc_r(size_t nbytes);
+    if(!inside_malloc) {
+      MallocCallCnt++;
+      TotalMallocdBytes += nbytes;
+    };
+    void *p = __real__malloc_r(nbytes);
+    return p;
+  };
+#endif
+
+// ================================================================================================
+// Implement FreeRTOS's memory API using newlib-provided malloc family.
+// ================================================================================================
+
+void *pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION {
+    void *p = malloc(xSize);
+    return p;
+}
+void vPortFree( void *pv ) PRIVILEGED_FUNCTION {
+    free(pv);
+};
+
+size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION {
+    struct mallinfo mi = mallinfo(); // available space now managed by newlib
+    return mi.fordblks + heapBytesRemaining; // plus space not yet handed to newlib by sbrk
+}
+
+// GetMinimumEverFree is not available in newlib's malloc implementation.
+// So, no implementation is provided: size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
+
+//! No implementation needed, but stub provided in case application already calls vPortInitialiseBlocks
+void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION {};
+]]></script>
+
+ 
+  </div> <!-- <div id="CodeDiv"> ====================================================================== -->
+
+  
+  <div style="wrapup">
+    <h1>Summary</h1>
+    <p>Unfortunately some vendors distribute tool chains with incorrect examples of FreeRTOS/newlib.
+	<br>However, with a bit of care newlib works well and safely with FreeRTOS.
+	<br>Enjoy!<br>Best Regards, Dave 
+	<br>
+	<br>
+	</p><p>PS: newlib provides facilities for wrapping stdio functions, not covered in this article.
+	You will want to use these, for example, if your application uses
+	posix IO functions to read and write to a USB stick using a local FAT implementation.</p>
+	<p>PS: Hope Richard Barry and the FreeRTOS team will add <code>heap_useNewlib.c</code> to FreeRTOS ;-)</p>
+    <h1>Additional References</h1>
+    <p class="description"><a href="http://www.billgatliff.com/newlib.html">http://www.billgatliff.com/newlib.html</a><br>
+    <a href="http://wiki.osdev.org/Porting_Newlib">http://wiki.osdev.org/Porting_Newlib</a><br>
+    <a href="http://www.embecosm.com/appnotes/ean9/ean9-howto-newlib-1.0.html">http://www.embecosm.com/appnotes/ean9/ean9-howto-newlib-1.0.html</a><br>
+    </p><br>
+ 
+ 
+    <footer>
+      Copyright &copy; 2017-2020 - Dave Nadler - All Rights Reserved<br>
+      Last Update 29-June-2020<br>
+      <br>
+      Contact Dave Nadler:<br>
+      voice USA East Coast +01 (978) 263-0097<br>
+      Skype Dave.Nadler1<br>
+      <a href="mailto:Dave.Nadler@Nadler.com">email Dave.Nadler@Nadler.com</a><br>
+      <a href="http://www.nadler.com">Nadler &amp; Associates Home Page</a>
+    </footer>
+  </div>
+
+
+  </section> <!-- <section id="content"> -->
+  </div> <!-- <div id="wrapper"> -->
+
+  </div> <!-- <div id="container"> -->
+</body>
+</html>
